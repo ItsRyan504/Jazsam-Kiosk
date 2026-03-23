@@ -62,38 +62,23 @@ export default function Home() {
     <main className="home">
       {/* ────────── HERO ────────── */}
       <section className="hero">
-        <div className="hero__bg" />
-        <div className="container hero__inner">
-          <div className="hero__text">
-            <div className="hero__eyebrow">
-              <span className="hero__brand-pill">
-                <span className="hero__brand-dot" />
-                Jazsam Coffee
-              </span>
-            </div>
-            <h1 className="hero__headline">
-              Where every sip<br />tells a tale.
-            </h1>
-            <p className="hero__sub">
-              Handcrafted coffee made with love, served in the heart of Legazpi City.
-            </p>
-            <div className="hero__ctas">
-              <Link to="/menu" className="btn-primary hero__cta-main">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2"/></svg>
-                View Menu
-              </Link>
-              <Link to="/about" className="btn-outline hero__cta-sec">Our Story</Link>
-            </div>
-          </div>
-          <div className="hero__image-wrap">
-            <div className="hero__image-glow" />
-            <img src="/hero_coffee.png" alt="Jazsam Coffee hero drink" className="hero__image" />
-          </div>
+        {/* Full-bleed background image */}
+        <div className="hero__bg-img" />
+        {/* Dark overlay for text legibility */}
+        <div className="hero__overlay" />
+
+        {/* Centered text content */}
+        <div className="hero__centered">
+          <p className="hero__eyebrow-text">This is Jazsam Coffee</p>
+          <h1 className="hero__headline">Where every sip tells a tale.</h1>
         </div>
-        <div className="hero__wave">
-          <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-            <path d="M0 40 C360 80 1080 0 1440 40 L1440 80 L0 80 Z" fill="#f8f6f2"/>
+
+        {/* Bottom-left social handle */}
+        <div className="hero__social-handle">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
           </svg>
+          <span>@JazsamCoffee</span>
         </div>
       </section>
 
@@ -245,48 +230,90 @@ export default function Home() {
                 loading="lazy"
                 allowFullScreen
                 referrerPolicy="no-referrer-when-downgrade"
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3924.3!2d123.7541!3d13.1391!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2sLegazpi+City%2C+Albay!5e0!3m2!1sen!2sph!4v1700000000000!5m2!1sen!2sph"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3924.058!2d123.73845!3d13.14127!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x33a1ef6b45c6c2c1%3A0x60debefd2c0f8e26!2sOld%20Albay%20District%2C%20Legazpi%20City%2C%20Albay!5e0!3m2!1sen!2sph!4v1700000000001!5m2!1sen!2sph"
               />
             </div>
           </div>
         </div>
       </section>
 
-      {/* ────────── REVIEWS PLATFORMS ────────── */}
-      <section className="reviews-platforms section-pad">
-        <div className="container">
-          <p className="reviews-platforms__label">Leave a review on the following platforms:</p>
-          <div className="reviews-platforms__cards">
-            {/* Google Maps */}
-            <a href="#" className="platform-card" target="_blank" rel="noopener noreferrer">
-              <div className="platform-card__logo platform-card__logo--google">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-                </svg>
-              </div>
-              <div className="platform-card__info">
-                <strong>Jazsam Coffee</strong>
-                <span>4PLJ+32W, Old Albay District, Legazpi City</span>
-                <div className="platform-card__action">Review on Google Maps</div>
-              </div>
-            </a>
+      {/* ────────── GOT THOUGHTS / REVIEWS ────────── */}
+      <section className="reviews-section section-pad">
+        <div className="container reviews-section__inner">
+          {/* Left: CTA text */}
+          <div className="reviews-section__left">
+            <p className="reviews-section__got">Got thoughts?</p>
+            <p className="reviews-section__headline"><strong>Help us improve.</strong></p>
+            <p className="reviews-section__desc">
+              Every review matters. Your feedback guides us in delivering better coffee and service.
+            </p>
+          </div>
 
-            {/* Facebook */}
-            <a href="#" className="platform-card" target="_blank" rel="noopener noreferrer">
-              <div className="platform-card__logo platform-card__logo--fb">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="#1877F2">
-                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                </svg>
-              </div>
-              <div className="platform-card__info">
-                <strong>Jazsam</strong>
-                <span>4PLJ+32W, Old Albay District, Legazpi City</span>
-                <div className="platform-card__action">Review on Facebook</div>
-              </div>
-            </a>
+          {/* Right: label + cards */}
+          <div className="reviews-section__right">
+            <p className="reviews-section__label">Leave a review on the following platforms:</p>
+            <div className="reviews-section__cards">
+
+              {/* Google Maps card */}
+              <a
+                href="https://search.google.com/local/writereview?placeid=ChIJLWMGb3GpqTMRqmKP8p6-3mA"
+                className="rev-card"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {/* Google Maps pin icon */}
+                <div className="rev-card__icon rev-card__icon--maps">
+                  <svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg" width="40" height="40">
+                    <circle cx="28" cy="28" r="28" fill="white"/>
+                    <path d="M28 14C22.477 14 18 18.477 18 24c0 8.25 10 18 10 18s10-9.75 10-18c0-5.523-4.477-10-10-10zm0 13.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z" fill="#EA4335"/>
+                    <path d="M28 14C22.477 14 18 18.477 18 24c0 8.25 10 18 10 18s10-9.75 10-18c0-5.523-4.477-10-10-10z" fill="url(#maps_grad)"/>
+                    <defs>
+                      <linearGradient id="maps_grad" x1="18" y1="14" x2="38" y2="42" gradientUnits="userSpaceOnUse">
+                        <stop stopColor="#4285F4"/>
+                        <stop offset="0.3" stopColor="#34A853"/>
+                        <stop offset="0.6" stopColor="#FBBC05"/>
+                        <stop offset="1" stopColor="#EA4335"/>
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                </div>
+                <div className="rev-card__body">
+                  <div className="rev-card__name">Jazsam Coffee</div>
+                  <div className="rev-card__address">4PLJ+32W, Old Albay District, Legazpi City, Albay</div>
+                  <div className="rev-card__rating">
+                    <div className="rev-card__stars">
+                      {[1,2,3,4,5].map(s => (
+                        <span key={s} style={{ color: s <= 3 ? '#FBBC05' : '#d0d0d0', fontSize: '0.9rem' }}>★</span>
+                      ))}
+                    </div>
+                    <span className="rev-card__count">3.0 ★ (5)</span>
+                  </div>
+                  <button className="rev-card__btn rev-card__btn--maps">Rate us on Google Maps</button>
+                </div>
+              </a>
+
+              {/* Facebook card */}
+              <a
+                href="https://www.facebook.com/jazsamcoffee"
+                className="rev-card"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <div className="rev-card__icon rev-card__icon--fb">
+                  <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                    <circle cx="20" cy="20" r="20" fill="#1877F2"/>
+                    <path d="M22.5 21h3l.5-3h-3.5v-1.5c0-.85.42-1.5 1.5-1.5H26v-2.5s-1.1-.5-2.5-.5c-2.6 0-4 1.6-4 4.1V18H17v3h2.5v7h3v-7z" fill="white"/>
+                  </svg>
+                </div>
+                <div className="rev-card__body">
+                  <div className="rev-card__name">Jazsam</div>
+                  <div className="rev-card__followers">1.2k followers</div>
+                  <div className="rev-card__address">4PLJ+32W, Old Albay District, Legazpi City, Albay</div>
+                  <button className="rev-card__btn rev-card__btn--fb">Rate us on Facebook</button>
+                </div>
+              </a>
+
+            </div>
           </div>
         </div>
       </section>
