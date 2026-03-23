@@ -86,7 +86,11 @@
 }
 
 .menu-cat-btn__icon {
-  font-size: 1.6rem;
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 12px;
+  display: block;
 }
 
 .menu-cat-btn__label {

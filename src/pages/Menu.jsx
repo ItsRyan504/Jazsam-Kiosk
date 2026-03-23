@@ -2,11 +2,11 @@ import { useState } from 'react';
 import './Menu.css';
 
 const CATEGORIES = [
-  { id: 'coffee', label: 'Coffee', icon: '☕' },
-  { id: 'milktea', label: 'Milktea', icon: '🧋' },
-  { id: 'soda', label: 'Soda', icon: '🥤' },
-  { id: 'mocktail', label: 'Mocktail', icon: '🍹' },
-  { id: 'sides', label: 'Sides', icon: '🍟' },
+  { id: 'coffee',   label: 'Coffee',   icon: '/icon_coffee.png' },
+  { id: 'milktea',  label: 'Milktea',  icon: '/icon_milktea.png' },
+  { id: 'soda',     label: 'Soda',     icon: '/icon_soda.png' },
+  { id: 'mocktail', label: 'Mocktail', icon: '/display_cup_gallery.png' },
+  { id: 'sides',    label: 'Sides',    icon: '/fries.png' },
 ];
 
 const COFFEE_FILTERS = ['All', 'w/ Milk', 'Black'];
@@ -68,7 +68,7 @@ export default function Menu() {
                   setActiveCoffeeFilter('All');
                 }}
               >
-                <span className="menu-cat-btn__icon">{cat.icon}</span>
+                <img src={cat.icon} alt={cat.label} className="menu-cat-btn__icon" />
                 <span className="menu-cat-btn__label">{cat.label}</span>
               </button>
             ))}
