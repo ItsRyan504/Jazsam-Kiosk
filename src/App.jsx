@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
+import PageTransition from './components/PageTransition';
 import Home from './pages/Home';
 import About from './pages/About';
 import Menu from './pages/Menu';
@@ -13,13 +14,15 @@ function App() {
     <BrowserRouter>
       <ScrollToTop />
       <Navbar />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/menu" element={<Menu />} />
-        <Route path="/location" element={<Location />} />
-        <Route path="/login" element={<LoginPlaceholder />} />
-      </Routes>
+      <PageTransition>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/menu" element={<Menu />} />
+          <Route path="/location" element={<Location />} />
+          <Route path="/login" element={<LoginPlaceholder />} />
+        </Routes>
+      </PageTransition>
       <Footer />
     </BrowserRouter>
   );
@@ -46,14 +49,17 @@ function LoginPlaceholder() {
         maxWidth: '400px',
         width: '90%',
       }}>
-        <div style={{
-          width: '56px', height: '56px',
-          background: '#1a1a1a', color: '#fff',
-          borderRadius: '14px', fontSize: '1.4rem',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          margin: '0 auto 20px',
-          fontFamily: 'Playfair Display, serif', fontWeight: 700,
-        }}>J</div>
+        <img
+          src="/trademark.png"
+          alt="Jazsam"
+          style={{
+            width: '56px', height: '56px',
+            borderRadius: '14px',
+            objectFit: 'cover',
+            display: 'block',
+            margin: '0 auto 20px',
+          }}
+        />
         <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.8rem', marginBottom: '8px' }}>
           Welcome back
         </h2>

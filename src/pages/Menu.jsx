@@ -2,11 +2,11 @@ import { useState } from 'react';
 import './Menu.css';
 
 const CATEGORIES = [
-  { id: 'coffee',   label: 'Coffee',   icon: '/icon_coffee.png' },
-  { id: 'milktea',  label: 'Milktea',  icon: '/icon_milktea.png' },
-  { id: 'soda',     label: 'Soda',     icon: '/icon_soda.png' },
-  { id: 'mocktail', label: 'Mocktail', icon: '/display_cup_gallery.png' },
-  { id: 'sides',    label: 'Sides',    icon: '/fries.png' },
+  { id: 'coffee', label: 'Coffee', icon: '/coffee-icon.png' },
+  { id: 'milktea', label: 'Milktea', icon: '/milktea-icon.png' },
+  { id: 'soda', label: 'Soda', icon: '/soda-icon.png' },
+  { id: 'mocktail', label: 'Mocktail', icon: '/mocktail.png' },
+  { id: 'sides', label: 'Sides', icon: '/sides-icon.png' },
 ];
 
 const COFFEE_FILTERS = ['All', 'w/ Milk', 'Black'];
