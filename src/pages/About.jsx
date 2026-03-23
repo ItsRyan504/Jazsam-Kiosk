@@ -2,9 +2,10 @@ import './About.css';
 
 const GALLERY = [
   '/hero_coffee.png',
-  '/spanish_latte.png',
+  '/display_cup_gallery.png',
   '/about_photos_grid.png',
-  '/cappuccino_cup.png',
+  '/fries.png',
+  '/display_cup.png',
 ];
 
 export default function About() {
