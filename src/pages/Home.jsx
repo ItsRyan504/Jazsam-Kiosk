@@ -62,9 +62,9 @@ export default function Home() {
     <main className="home">
       {/* ────────── HERO ────────── */}
       <section className="hero">
-        {/* Coffee cup naturally embedded in bokeh background */}
-        <div className="hero__bg-img" />
-        {/* Very subtle overlay for text legibility */}
+        {/* Blurred bokeh background ONLY — no cup here */}
+        <div className="hero__bg-bokeh" />
+        {/* Subtle overlay for text legibility */}
         <div className="hero__overlay" />
 
         {/* Centered text block */}
@@ -72,6 +72,13 @@ export default function Home() {
           <p className="hero__eyebrow-text">This is Jazsam Coffee</p>
           <h1 className="hero__headline">Where every sip tells a tale.</h1>
         </div>
+
+        {/* Coffee cup — SHARP, no blur, positioned at bottom center */}
+        <img
+          src="/hero_cup_blended.png"
+          alt="Jazsam iced coffee"
+          className="hero__cup-img"
+        />
 
         {/* Bottom-left social handle */}
         <div className="hero__social-handle">

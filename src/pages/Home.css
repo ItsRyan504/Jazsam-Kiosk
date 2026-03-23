@@ -34,31 +34,20 @@
   justify-content: center;
 }
 
-/* Background: bokeh photo behind + cup PNG in front — stacked via CSS multi-background */
-.hero__bg-img {
+/* Bokeh background ONLY — this gets the blur, NOT the cup */
+.hero__bg-bokeh {
   position: absolute;
   inset: 0;
-  /* Layer 1 (front): transparent cup PNG, centered at bottom */
-  /* Layer 2 (back): bokeh nature photo covers the full area */
-  background-image:
-    url('/hero_cup_blended.png'),
-    url('/hero_bokeh_bg.png');
-  background-size:
-    48% auto,
-    cover;
-  background-repeat:
-    no-repeat,
-    no-repeat;
-  background-position:
-    center bottom,
-    center center;
-  /* Soft blur for dreamy, cozy feel */
+  background-image: url('/hero_bokeh_bg.png');
+  background-size: cover;
+  background-position: center center;
+  /* Blur ONLY the background — cup will be a separate sharp element */
   filter: blur(3px);
-  /* Scale up so blur edges are hidden by overflow:hidden on .hero */
+  /* Scale up to hide blur-edge artefacts */
   transform: scale(1.08);
   transition: transform 8s ease;
 }
-.hero:hover .hero__bg-img {
+.hero:hover .hero__bg-bokeh {
   transform: scale(1.04);
 }
 
@@ -109,27 +98,23 @@
   text-shadow: 0 2px 16px rgba(0,0,0,0.2);
 }
 
-/* Coffee cup object – absolutely positioned at the bottom center */
-.hero__cup-wrap {
+/* Coffee cup img — SHARP, no blur, perfectly centered at bottom */
+.hero__cup-img {
   position: absolute;
   bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
+  /* Perfect centering: stretch to full width, then margin:auto */
+  left: 0;
+  right: 0;
+  margin: 0 auto;
   z-index: 3;
-  width: clamp(280px, 38vw, 520px);
-  pointer-events: none;
-  animation: heroFadeUp 1s 0.15s ease both;
-}
-.hero__cup-img {
-  width: 100%;
+  width: clamp(260px, 42vw, 560px);
   height: auto;
   object-fit: contain;
-  /* Blend away white background into bokeh */
-  mix-blend-mode: multiply;
-  /* Drop shadow underneath for depth */
-  filter: drop-shadow(0 24px 40px rgba(0,0,0,0.28));
+  pointer-events: none;
+  /* No blur — just a subtle shadow for depth */
+  filter: drop-shadow(0 16px 32px rgba(0,0,0,0.20));
+  animation: heroFadeUp 1s 0.15s ease both;
   display: block;
-  margin-bottom: -8%;
 }
 
 /* Bottom-left Facebook handle */
@@ -286,8 +271,7 @@
 .featured__card--center .featured__card-img {
   width: 200px;
   height: 200px;
-  filter: drop-shadow(0 12px 24px rgba(0,0,0,0.25));
-  mix-blend-mode: multiply;
+  filter: drop-shadow(0 12px 24px rgba(0,0,0,0.35));
 }
 .featured__card-img {
   width: 150px;
@@ -656,12 +640,31 @@
     grid-template-columns: 1fr;
     max-width: 380px;
     margin: 0 auto;
+    /* No extra top padding needed since cup won't overflow on mobile */
+    padding-top: 24px;
   }
   .featured__card--center {
     transform: none;
+    /* Reset padding-top — cup flows normally inside card on mobile */
+    padding-top: 24px;
+    overflow: hidden;
   }
   .featured__card--center:hover {
     transform: translateY(-4px);
+  }
+  /* On mobile: center card image goes BACK to normal inline flow */
+  .featured__card--center .featured__card-img-wrap {
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: none;
+    width: 100%;
+    margin-bottom: 16px;
+  }
+  .featured__card--center .featured__card-img {
+    width: 150px;
+    height: 150px;
+    margin: 0 auto;
   }
   .featured__header {
     flex-direction: column;

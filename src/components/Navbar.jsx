@@ -25,20 +25,7 @@ export default function Navbar() {
         {/* Logo */}
         <Link to="/" className="navbar__logo" onClick={() => setMenuOpen(false)}>
           <div className="navbar__logo-icon">
-            {/* Trademark J icon – stylized figure/J */}
-            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" width="22" height="22">
-              {/* Circle head */}
-              <circle cx="20" cy="7" r="4.5" fill="white"/>
-              {/* J body: vertical then curving left */}
-              <path
-                d="M20 11.5 L20 22 Q20 28 13 28 Q8 28 8 23"
-                stroke="white"
-                strokeWidth="4.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                fill="none"
-              />
-            </svg>
+            <img src="/trademark.png" alt="Jazsam trademark" className="navbar__trademark-img" />
           </div>
           <span>Jazsam</span>
         </Link>
