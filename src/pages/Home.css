@@ -39,14 +39,20 @@
   position: absolute;
   inset: 0;
   background-image: url('/hero_cup_blended.png');
-  background-size: cover;
-  /* Shift image up so only the cup TIP shows at bottom of viewport */
-  background-position: center 20%;
-  transform: scale(1.04);
+  /* Cup sits at the bottom, only the rim/tip visible */
+  background-size: 48% auto;
+  background-repeat: no-repeat;
+  background-position: center bottom;
+  /* Warm neutral fill for edges outside the image */
+  background-color: #bfbbb3;
+  /* Soft blur for dreamy effect */
+  filter: blur(3px);
+  /* Scale up slightly so blur edges are hidden by overflow:hidden */
+  transform: scale(1.08);
   transition: transform 8s ease;
 }
 .hero:hover .hero__bg-img {
-  transform: scale(1);
+  transform: scale(1.04);
 }
 
 /* Subtle gradient – keep text readable at center */
