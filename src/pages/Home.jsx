@@ -62,12 +62,12 @@ export default function Home() {
     <main className="home">
       {/* ────────── HERO ────────── */}
       <section className="hero">
-        {/* Full-bleed background image */}
+        {/* Coffee cup naturally embedded in bokeh background */}
         <div className="hero__bg-img" />
-        {/* Dark overlay for text legibility */}
+        {/* Very subtle overlay for text legibility */}
         <div className="hero__overlay" />
 
-        {/* Centered text content */}
+        {/* Centered text block */}
         <div className="hero__centered">
           <p className="hero__eyebrow-text">This is Jazsam Coffee</p>
           <h1 className="hero__headline">Where every sip tells a tale.</h1>
@@ -88,25 +88,12 @@ export default function Home() {
           <div className="featured__header">
             <div>
               <p className="section-eyebrow">Featured</p>
-              <h2 className="section-title">Discover our top picks—<br />customer favorites brewed to perfection and loved in every sip.</h2>
+              <p className="section-subtitle">Discover our top picks—customer favorites brewed to perfection and loved in every sip.</p>
             </div>
-            <Link to="/menu" className="btn-outline">View Full Menu →</Link>
+            <Link to="/menu" className="featured__view-link">View Full Menu →</Link>
           </div>
 
-          {/* Tab bar */}
-          <div className="featured__tabs">
-            {TABS.map(tab => (
-              <button
-                key={tab}
-                className={`featured__tab${activeTab === tab ? ' featured__tab--active' : ''}`}
-                onClick={() => setActiveTab(tab)}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
-
-          {/* Cards */}
+          {/* Cards – tabs now at the BOTTOM */}
           <div className="featured__cards">
             {FEATURED.map((item, i) => (
               <div
@@ -121,10 +108,23 @@ export default function Home() {
                   <h3 className="featured__card-name">{item.name}</h3>
                   <p className="featured__card-desc">{item.desc}</p>
                   {i === 1 && (
-                    <button className="btn-primary featured__card-btn">Add to order</button>
+                    <button className="btn-primary featured__card-btn">GET BREWING</button>
                   )}
                 </div>
               </div>
+            ))}
+          </div>
+
+          {/* Tab bar – BELOW the cards */}
+          <div className="featured__tabs">
+            {TABS.map(tab => (
+              <button
+                key={tab}
+                className={`featured__tab${activeTab === tab ? ' featured__tab--active' : ''}`}
+                onClick={() => setActiveTab(tab)}
+              >
+                {tab}
+              </button>
             ))}
           </div>
         </div>
@@ -204,7 +204,7 @@ export default function Home() {
               </div>
               <div className="map-section__btns">
                 <a
-                  href="https://maps.google.com/?q=Jazsam+Coffee+Legazpi+City+Albay"
+                  href="https://maps.google.com/?q=4PRJ%2B32W+Old+Albay+District+Legazpi+City+Albay"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn-primary map-btn"
@@ -214,7 +214,7 @@ export default function Home() {
                 </a>
                 <button
                   className="btn-outline map-btn"
-                  onClick={() => navigator.clipboard.writeText('4PLJ+32W, Old Albay District, Legazpi City, Albay')}
+                  onClick={() => navigator.clipboard.writeText('4PRJ+32W, Old Albay District, Legazpi City, Albay')}
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                   Copy
@@ -223,14 +223,13 @@ export default function Home() {
             </div>
 
             <div className="map-section__map-wrap">
-              {/* Google Maps Embed placeholder – you'll integrate the real API later */}
               <iframe
                 className="map-section__map"
                 title="Jazsam Coffee location"
                 loading="lazy"
                 allowFullScreen
                 referrerPolicy="no-referrer-when-downgrade"
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3924.058!2d123.73845!3d13.14127!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x33a1ef6b45c6c2c1%3A0x60debefd2c0f8e26!2sOld%20Albay%20District%2C%20Legazpi%20City%2C%20Albay!5e0!3m2!1sen!2sph!4v1700000000001!5m2!1sen!2sph"
+                src="https://maps.google.com/maps?q=Jazsam+Coffee+4PRJ%2B32W+Old+Albay+Legazpi+City+Albay&output=embed"
               />
             </div>
           </div>
