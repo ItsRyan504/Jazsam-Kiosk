@@ -34,20 +34,27 @@
   justify-content: center;
 }
 
-/* Background – positioned so cup rim/tip shows at bottom */
+/* Background: bokeh photo behind + cup PNG in front — stacked via CSS multi-background */
 .hero__bg-img {
   position: absolute;
   inset: 0;
-  background-image: url('/hero_cup_blended.png');
-  /* Cup sits at the bottom, only the rim/tip visible */
-  background-size: 48% auto;
-  background-repeat: no-repeat;
-  background-position: center bottom;
-  /* Warm neutral fill for edges outside the image */
-  background-color: #bfbbb3;
-  /* Soft blur for dreamy effect */
+  /* Layer 1 (front): transparent cup PNG, centered at bottom */
+  /* Layer 2 (back): bokeh nature photo covers the full area */
+  background-image:
+    url('/hero_cup_blended.png'),
+    url('/hero_bokeh_bg.png');
+  background-size:
+    48% auto,
+    cover;
+  background-repeat:
+    no-repeat,
+    no-repeat;
+  background-position:
+    center bottom,
+    center center;
+  /* Soft blur for dreamy, cozy feel */
   filter: blur(3px);
-  /* Scale up slightly so blur edges are hidden by overflow:hidden */
+  /* Scale up so blur edges are hidden by overflow:hidden on .hero */
   transform: scale(1.08);
   transition: transform 8s ease;
 }
