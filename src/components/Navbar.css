@@ -43,9 +43,8 @@
 .navbar__logo-icon {
   width: 32px;
   height: 32px;
-  border-radius: 8px;
+  border-radius: 0;
   overflow: hidden;
-  border: 1.5px solid var(--color-border);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -73,23 +72,41 @@
 }
 
 .navbar__link {
+  position: relative;
   padding: 7px 14px;
-  border-radius: 8px;
   font-size: 0.9rem;
   font-weight: 500;
   color: var(--color-muted);
-  transition: color var(--transition), background var(--transition);
+  transition: color var(--transition);
   text-decoration: none;
+}
+
+.navbar__link::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%) scaleX(0);
+  width: calc(100% - 28px);
+  height: 2px;
+  background: var(--color-dark);
+  border-radius: 2px;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center;
 }
 
 .navbar__link:hover {
   color: var(--color-dark);
-  background: var(--color-cream);
+  background: none;
 }
 
 .navbar__link--active {
   color: var(--color-dark);
   font-weight: 600;
+}
+
+.navbar__link--active::after {
+  transform: translateX(-50%) scaleX(1);
 }
 
 /* ── Login / Sign up (plain text link) ── */
