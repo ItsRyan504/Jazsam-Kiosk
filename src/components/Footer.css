@@ -9,7 +9,7 @@
 
 .footer__inner {
   display: grid;
-  grid-template-columns: 1.8fr 1fr 1fr 1fr;
+  grid-template-columns: 1.6fr 1fr 1fr 1fr 1.4fr;
   gap: 40px;
   padding-bottom: 48px;
 }
@@ -79,6 +79,54 @@
 
 .footer__col-links a:hover {
   color: rgba(255,255,255,0.9);
+}
+
+/* ── GET IN TOUCH — social icons ── */
+.footer__socials {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.footer__social-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s, transform 0.2s;
+  flex-shrink: 0;
+}
+
+.footer__social-icon:hover {
+  background: rgba(255,255,255,0.22);
+  color: #fff;
+  transform: translateY(-2px);
+}
+
+/* ── GET IN TOUCH — contact list ── */
+.footer__contact-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.footer__contact-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.5);
+  line-height: 1.4;
+}
+
+.footer__contact-item svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: rgba(255,255,255,0.35);
 }
 
 /* ── Platform cards (gmap + fb) ── */

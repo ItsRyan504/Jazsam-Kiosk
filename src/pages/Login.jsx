@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import './Login.css';
 
 /* ─── Password visibility icon ─────────────── */
@@ -19,15 +20,13 @@ function EyeIcon({ open }) {
 }
 
 /* ─── Check icon ────────────────────────────── */
-function CheckIcon() {
-  return <span>✓</span>;
-}
+function CheckIcon() { return <span>✓</span>; }
 
 /* ─── Password rules ────────────────────────── */
 const PW_RULES = [
-  { id: 'len',     label: 'At least 12 characters',                        test: (p) => p.length >= 12 },
-  { id: 'upper',   label: 'Includes at least one uppercase letter (A-Z)',  test: (p) => /[A-Z]/.test(p) },
-  { id: 'number',  label: 'Includes at least one number (0-9)',            test: (p) => /[0-9]/.test(p) },
+  { id: 'len',     label: 'At least 12 characters',                         test: (p) => p.length >= 12 },
+  { id: 'upper',   label: 'Includes at least one uppercase letter (A-Z)',   test: (p) => /[A-Z]/.test(p) },
+  { id: 'number',  label: 'Includes at least one number (0-9)',             test: (p) => /[0-9]/.test(p) },
   { id: 'special', label: 'Must contain one special character (! @ # $ %)', test: (p) => /[!@#$%]/.test(p) },
 ];
 
@@ -37,12 +36,18 @@ const PW_RULES = [
 export default function Login() {
   const [view, setView] = useState('login');
   const navigate        = useNavigate();
+  const { login }       = useAuth();
 
   /* ── Login state ── */
   const [loginEmail,  setLoginEmail]  = useState('');
   const [loginPw,     setLoginPw]     = useState('');
   const [showLoginPw, setShowLoginPw] = useState(false);
   const [loginErr,    setLoginErr]    = useState({});
+
+  /* ── Forgot password state ── */
+  const [forgotEmail,   setForgotEmail]   = useState('');
+  const [forgotErr,     setForgotErr]     = useState('');
+  const [forgotSent,    setForgotSent]    = useState(false);
 
   /* ── Register step 1 state ── */
   const [reg1,    setReg1]    = useState({ firstName: '', lastName: '', email: '', phone: '' });
@@ -63,7 +68,16 @@ export default function Login() {
     if (!loginPw)           errs.pw    = 'Password is required';
     if (Object.keys(errs).length) { setLoginErr(errs); return; }
     setLoginErr({});
-    alert('Logged in! (demo)');
+    login({ name: 'Customer', email: loginEmail });
+    navigate('/');
+  }
+
+  function handleForgotSend(e) {
+    e.preventDefault();
+    if (!forgotEmail.trim()) { setForgotErr('Please enter your email address.'); return; }
+    if (!/\S+@\S+\.\S+/.test(forgotEmail)) { setForgotErr('Please enter a valid email address.'); return; }
+    setForgotErr('');
+    setForgotSent(true);
   }
 
   function handleReg1Next(e) {
@@ -85,7 +99,8 @@ export default function Login() {
     if (password !== confirmPw) errs.confirm = 'Password does not match!';
     if (Object.keys(errs).length) { setReg2Err(errs); return; }
     setReg2Err({});
-    alert('Account created! (demo)');
+    login({ name: reg1.firstName, email: reg1.email });
+    navigate('/');
   }
 
   /* ── Logo ── */
@@ -105,7 +120,7 @@ export default function Login() {
 
           <form className="login-form" onSubmit={handleLogin} noValidate>
 
-            {/* Email — floating label */}
+            {/* Email */}
             <div className={`login-field floating${loginErr.email ? ' has-error' : ''}`}>
               <input
                 id="login-email"
@@ -119,7 +134,7 @@ export default function Login() {
               {loginErr.email && <p className="field-error">{loginErr.email}</p>}
             </div>
 
-            {/* Password — floating label */}
+            {/* Password */}
             <div className={`login-field floating${loginErr.pw ? ' has-error' : ''}`}>
               <div className="pw-wrapper">
                 <input
@@ -146,7 +161,11 @@ export default function Login() {
             <button type="submit" className="login-btn-primary">Log in</button>
           </form>
 
-          <p className="login-forgot">Forgotten password?</p>
+          <p className="login-forgot">
+            <button type="button" className="login-forgot-btn" onClick={() => { setView('forgot'); setForgotEmail(''); setForgotSent(false); setForgotErr(''); }}>
+              Forgotten password?
+            </button>
+          </p>
 
           <div className="login-divider"><span>Not a member yet?</span></div>
 
@@ -167,6 +186,72 @@ export default function Login() {
   }
 
   /* ══════════════════
+     FORGOT PASSWORD
+     ══════════════════ */
+  if (view === 'forgot') {
+    return (
+      <div className="login-page">
+        <div className="login-card">
+          <Logo />
+
+          {forgotSent ? (
+            <div className="forgot-success">
+              <div className="forgot-success__icon">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                  <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+              </div>
+              <h1 className="login-title">Check your email</h1>
+              <p className="forgot-success__msg">
+                We've sent a password reset link to<br />
+                <strong>{forgotEmail}</strong>
+              </p>
+              <p className="forgot-success__sub">
+                Didn't receive it? Check your spam folder or{' '}
+                <button type="button" className="login-forgot-btn" onClick={() => setForgotSent(false)}>
+                  try again
+                </button>.
+              </p>
+              <button type="button" className="login-btn-primary" style={{ marginTop: '8px' }} onClick={() => setView('login')}>
+                Back to Login
+              </button>
+            </div>
+          ) : (
+            <>
+              <h1 className="login-title">Forgot your password?</h1>
+              <p className="forgot-desc">
+                Enter the email address associated with your account and we'll send you a link to reset your password.
+              </p>
+
+              <form className="login-form" onSubmit={handleForgotSend} noValidate>
+                <div className={`login-field floating${forgotErr ? ' has-error' : ''}`}>
+                  <input
+                    id="forgot-email"
+                    type="email"
+                    placeholder=" "
+                    value={forgotEmail}
+                    onChange={e => setForgotEmail(e.target.value)}
+                    autoComplete="email"
+                  />
+                  <label htmlFor="forgot-email">Email address</label>
+                  {forgotErr && <p className="field-error">{forgotErr}</p>}
+                </div>
+
+                <button type="submit" className="login-btn-primary">Send reset link</button>
+              </form>
+
+              <span className="login-back-link" onClick={() => setView('login')}>
+                ← Back to Login
+              </span>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  /* ══════════════════
      REGISTER STEP 1
      ══════════════════ */
   if (view === 'register-step1') {
@@ -178,7 +263,6 @@ export default function Login() {
 
           <form className="login-form" onSubmit={handleReg1Next} noValidate>
 
-            {/* First name */}
             <div className={`login-field floating${reg1Err.firstName ? ' has-error' : ''}`}>
               <input
                 id="reg-firstname"
@@ -192,7 +276,6 @@ export default function Login() {
               {reg1Err.firstName && <p className="field-error">{reg1Err.firstName}</p>}
             </div>
 
-            {/* Last name */}
             <div className={`login-field floating${reg1Err.lastName ? ' has-error' : ''}`}>
               <input
                 id="reg-lastname"
@@ -206,7 +289,6 @@ export default function Login() {
               {reg1Err.lastName && <p className="field-error">{reg1Err.lastName}</p>}
             </div>
 
-            {/* Email */}
             <div className={`login-field floating${reg1Err.email ? ' has-error' : ''}`}>
               <input
                 id="reg-email"
@@ -220,7 +302,6 @@ export default function Login() {
               {reg1Err.email && <p className="field-error">{reg1Err.email}</p>}
             </div>
 
-            {/* Phone (optional) */}
             <div className="login-field floating">
               <input
                 id="reg-phone"
@@ -255,7 +336,6 @@ export default function Login() {
 
         <form className="login-form" onSubmit={handleCreateAccount} noValidate>
 
-          {/* Password — floating label */}
           <div className={`login-field floating${reg2Err.pw ? ' has-error' : ''}`}>
             <div className="pw-wrapper">
               <input
@@ -278,7 +358,6 @@ export default function Login() {
             </div>
           </div>
 
-          {/* Password checklist */}
           <ul className="pw-checklist">
             {PW_RULES.map(rule => {
               const valid = rule.test(password);
@@ -291,7 +370,6 @@ export default function Login() {
             })}
           </ul>
 
-          {/* Confirm password — floating label */}
           <div className={`login-field floating${reg2Err.confirm ? ' has-error' : ''}`}>
             <div className="pw-wrapper">
               <input

@@ -217,12 +217,61 @@
   color: #a89f96;
   text-align: center;
   margin-top: 8px;
+}
+
+.login-forgot-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: inherit;
+  font-family: inherit;
+  color: #a89f96;
   cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
   transition: color 0.2s;
 }
 
-.login-forgot:hover {
+.login-forgot-btn:hover {
   color: var(--color-dark);
+}
+
+/* Forgot password desc */
+.forgot-desc {
+  font-size: 0.85rem;
+  color: var(--color-muted);
+  text-align: center;
+  line-height: 1.6;
+  margin-bottom: 20px;
+  margin-top: -10px;
+}
+
+/* Forgot password success state */
+.forgot-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+  gap: 4px;
+}
+
+.forgot-success__icon {
+  margin-bottom: 8px;
+}
+
+.forgot-success__msg {
+  font-size: 0.9rem;
+  color: var(--color-dark);
+  line-height: 1.6;
+  margin-bottom: 6px;
+}
+
+.forgot-success__sub {
+  font-size: 0.82rem;
+  color: var(--color-muted);
+  line-height: 1.6;
+  margin-bottom: 8px;
 }
 
 /* ---- Divider ---- */

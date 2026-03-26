@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import './Navbar.css';
 
 export default function Navbar() {
-  const [scrolled,  setScrolled]  = useState(false);
-  const [menuOpen,  setMenuOpen]  = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const { user, logout }        = useAuth();
+  const navigate                = useNavigate();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -12,12 +15,31 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  const links = [
+  /* ── Guest links ── */
+  const guestLinks = [
     { to: '/',         label: 'Home'     },
     { to: '/menu',     label: 'Menu'     },
     { to: '/about',    label: 'About'    },
     { to: '/location', label: 'Location' },
   ];
+
+  /* ── Logged-in links ── */
+  const userLinks = [
+    { to: '/',           label: 'Home'      },
+    { to: '/menu',       label: 'Menu'      },
+    { to: '/about',      label: 'About'     },
+    { to: '/rewards',    label: 'Rewards'   },
+    { to: '/my-orders',  label: 'My orders' },
+    { to: '/profile',    label: 'Profile'   },
+  ];
+
+  const links = user ? userLinks : guestLinks;
+
+  function handleLogout() {
+    logout();
+    navigate('/');
+    setMenuOpen(false);
+  }
 
   return (
     <header className={`navbar${scrolled ? ' navbar--scrolled' : ''}`}>
@@ -48,9 +70,15 @@ export default function Navbar() {
           ))}
         </nav>
 
-        {/* Login / Sign up — plain text */}
+        {/* Auth area */}
         <div className="navbar__auth">
-          <Link to="/login" className="navbar__login-link">Login/Sign up</Link>
+          {user ? (
+            <button className="navbar__login-link navbar__logout-btn" onClick={handleLogout}>
+              Log out
+            </button>
+          ) : (
+            <Link to="/login" className="navbar__login-link">Login/Sign up</Link>
+          )}
         </div>
 
         {/* Hamburger */}
@@ -79,7 +107,11 @@ export default function Navbar() {
             </NavLink>
           ))}
           <div className="navbar__drawer-auth">
-            <Link to="/login" onClick={() => setMenuOpen(false)}>Login / Sign up</Link>
+            {user ? (
+              <button className="navbar__login-link navbar__logout-btn" onClick={handleLogout}>Log out</button>
+            ) : (
+              <Link to="/login" onClick={() => setMenuOpen(false)}>Login / Sign up</Link>
+            )}
           </div>
         </div>
       )}

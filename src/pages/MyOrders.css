@@ -1,0 +1,218 @@
+/* ─── Page wrapper ─────────────────────────── */
+.my-orders-page {
+  min-height: 80vh;
+  background: var(--color-bg);
+  padding-top: 100px;
+}
+
+.my-orders__title {
+  font-family: var(--font-sans);
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  font-weight: 700;
+  color: var(--color-dark);
+  margin-bottom: 28px;
+}
+
+/* ─── Tabs ───────────────────────────────────── */
+.my-orders__tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 32px;
+}
+
+.my-orders__tab {
+  padding: 8px 18px;
+  border-radius: 50px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-muted);
+  background: transparent;
+  border: 1.5px solid var(--color-border);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: var(--font-sans);
+}
+
+.my-orders__tab:hover {
+  border-color: var(--color-dark);
+  color: var(--color-dark);
+}
+
+.my-orders__tab.active {
+  background: var(--color-dark);
+  border-color: var(--color-dark);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* ─── Orders list ─────────────────────────────── */
+.my-orders__list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.my-orders__empty {
+  text-align: center;
+  color: var(--color-muted);
+  padding: 64px 0;
+  font-size: 0.95rem;
+}
+
+/* ─── Order card ──────────────────────────────── */
+.order-card {
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 20px 24px;
+  transition: box-shadow 0.2s ease;
+}
+
+.order-card:hover {
+  box-shadow: var(--shadow-sm);
+}
+
+/* Top row */
+.order-card__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.order-card__meta {
+  display: flex;
+  gap: 28px;
+  flex-wrap: wrap;
+}
+
+.order-card__id,
+.order-card__date {
+  font-size: 0.82rem;
+  color: var(--color-muted);
+}
+
+.order-card__id strong,
+.order-card__date strong {
+  color: var(--color-dark);
+  font-weight: 600;
+}
+
+.order-card__view-btn {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--color-dark);
+  background: none;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  font-family: var(--font-sans);
+  padding: 0;
+  transition: color 0.2s;
+}
+
+.order-card__view-btn:hover {
+  color: var(--color-brown-light);
+}
+
+.order-card__divider {
+  height: 1px;
+  background: var(--color-border);
+  margin-bottom: 16px;
+}
+
+/* Bottom body */
+.order-card__body {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.5fr auto;
+  gap: 16px;
+  align-items: start;
+}
+
+.order-card__label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-muted);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.order-card__item {
+  font-size: 0.875rem;
+  color: var(--color-dark);
+  font-weight: 500;
+  line-height: 1.6;
+}
+
+.order-card__total {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-dark);
+}
+
+.order-card__note {
+  font-size: 0.82rem;
+  color: var(--color-muted);
+  line-height: 1.5;
+  font-style: italic;
+}
+
+/* Status badge */
+.order-card__status-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.order-card__status {
+  display: inline-block;
+  padding: 8px 18px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+
+.order-card__expires {
+  font-size: 0.72rem;
+  color: var(--color-muted);
+  text-align: right;
+}
+
+/* ─── Responsive ──────────────────────────────── */
+@media (max-width: 768px) {
+  .order-card__body {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .order-card__col--note,
+  .order-card__status-wrap {
+    grid-column: span 2;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .order-card__body {
+    grid-template-columns: 1fr;
+  }
+  .order-card__col--note,
+  .order-card__status-wrap {
+    grid-column: span 1;
+  }
+  .my-orders__tabs {
+    gap: 6px;
+  }
+  .my-orders__tab {
+    font-size: 0.8rem;
+    padding: 6px 14px;
+  }
+}
