@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useOrders } from '../context/OrdersContext';
 import './MyOrders.css';
 
 const TABS = ['All', 'Pending', 'Preparing', 'Ready for Pickup', 'Served', 'Expired'];
@@ -15,10 +16,11 @@ const STATUS_CONFIG = {
 
 export default function MyOrders() {
   const [activeTab, setActiveTab] = useState('All');
+  const { orders }                = useOrders();
 
   const filtered = activeTab === 'All'
-    ? MOCK_ORDERS
-    : MOCK_ORDERS.filter(o => o.status === activeTab);
+    ? orders
+    : orders.filter(o => o.status === activeTab);
 
   return (
     <div className="my-orders-page section-pad">
@@ -72,11 +74,15 @@ export default function MyOrders() {
                     </div>
                     <div className="order-card__col">
                       <p className="order-card__label">Total amount:</p>
-                      <p className="order-card__total">{order.total}</p>
+                      <p className="order-card__total">
+                        {typeof order.total === 'number'
+                          ? `₱${order.total.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`
+                          : order.total}
+                      </p>
                     </div>
                     <div className="order-card__col order-card__col--note">
                       <p className="order-card__label">Note:</p>
-                      <p className="order-card__note">{order.note}</p>
+                      <p className="order-card__note">{order.note || '—'}</p>
                     </div>
                     <div className="order-card__status-wrap">
                       <span
