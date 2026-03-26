@@ -506,11 +506,17 @@
 }
 
 /* Right */
+.reviews-section__right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
 .reviews-section__label {
   font-size: 0.82rem;
   color: var(--color-muted);
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   text-align: right;
+  align-self: flex-end;
 }
 .reviews-section__cards {
   display: flex;

@@ -269,19 +269,7 @@ export default function Home() {
               >
                 {/* Google Maps pin icon */}
                 <div className="rev-card__icon rev-card__icon--maps">
-                  <svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg" width="40" height="40">
-                    <circle cx="28" cy="28" r="28" fill="white"/>
-                    <path d="M28 14C22.477 14 18 18.477 18 24c0 8.25 10 18 10 18s10-9.75 10-18c0-5.523-4.477-10-10-10zm0 13.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z" fill="#EA4335"/>
-                    <path d="M28 14C22.477 14 18 18.477 18 24c0 8.25 10 18 10 18s10-9.75 10-18c0-5.523-4.477-10-10-10z" fill="url(#maps_grad)"/>
-                    <defs>
-                      <linearGradient id="maps_grad" x1="18" y1="14" x2="38" y2="42" gradientUnits="userSpaceOnUse">
-                        <stop stopColor="#4285F4"/>
-                        <stop offset="0.3" stopColor="#34A853"/>
-                        <stop offset="0.6" stopColor="#FBBC05"/>
-                        <stop offset="1" stopColor="#EA4335"/>
-                      </linearGradient>
-                    </defs>
-                  </svg>
+                  <img src="/gmap.png" alt="Google Maps" width="40" height="40" style={{ objectFit: 'contain' }} />
                 </div>
                 <div className="rev-card__body">
                   <div className="rev-card__name">Jazsam Coffee</div>
@@ -306,10 +294,7 @@ export default function Home() {
                 rel="noopener noreferrer"
               >
                 <div className="rev-card__icon rev-card__icon--fb">
-                  <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-                    <circle cx="20" cy="20" r="20" fill="#1877F2"/>
-                    <path d="M22.5 21h3l.5-3h-3.5v-1.5c0-.85.42-1.5 1.5-1.5H26v-2.5s-1.1-.5-2.5-.5c-2.6 0-4 1.6-4 4.1V18H17v3h2.5v7h3v-7z" fill="white"/>
-                  </svg>
+                  <img src="/fb.png" alt="Facebook" width="40" height="40" style={{ objectFit: 'contain' }} />
                 </div>
                 <div className="rev-card__body">
                   <div className="rev-card__name">Jazsam</div>

@@ -3,8 +3,8 @@ import { Link, NavLink } from 'react-router-dom';
 import './Navbar.css';
 
 export default function Navbar() {
-  const [scrolled, setScrolled] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled,  setScrolled]  = useState(false);
+  const [menuOpen,  setMenuOpen]  = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -13,22 +13,26 @@ export default function Navbar() {
   }, []);
 
   const links = [
-    { to: '/', label: 'Home' },
-    { to: '/menu', label: 'Menu' },
-    { to: '/about', label: 'About' },
+    { to: '/',         label: 'Home'     },
+    { to: '/menu',     label: 'Menu'     },
+    { to: '/about',    label: 'About'    },
     { to: '/location', label: 'Location' },
   ];
 
   return (
     <header className={`navbar${scrolled ? ' navbar--scrolled' : ''}`}>
       <div className="container navbar__inner">
+
         {/* Logo */}
         <Link to="/" className="navbar__logo" onClick={() => setMenuOpen(false)}>
           <div className="navbar__logo-icon">
-            <img src="/trademark.png" alt="Jazsam trademark" className="navbar__trademark-img" />
+            <img src="/trademark.png" alt="Jazsam" className="navbar__trademark-img" />
           </div>
           <span>Jazsam</span>
         </Link>
+
+        {/* spacer */}
+        <div className="navbar__spacer" />
 
         {/* Desktop Nav */}
         <nav className="navbar__links" aria-label="Main navigation">
@@ -44,10 +48,9 @@ export default function Navbar() {
           ))}
         </nav>
 
-        {/* Auth buttons */}
+        {/* Login / Sign up — plain text */}
         <div className="navbar__auth">
-          <Link to="/login" className="btn-outline navbar__signin">Sign in</Link>
-          <Link to="/login" className="btn-primary navbar__create">Create Account</Link>
+          <Link to="/login" className="navbar__login-link">Login/Sign up</Link>
         </div>
 
         {/* Hamburger */}
@@ -76,7 +79,7 @@ export default function Navbar() {
             </NavLink>
           ))}
           <div className="navbar__drawer-auth">
-            <Link to="/login" className="btn-primary" onClick={() => setMenuOpen(false)}>Login / Sign Up</Link>
+            <Link to="/login" onClick={() => setMenuOpen(false)}>Login / Sign up</Link>
           </div>
         </div>
       )}
