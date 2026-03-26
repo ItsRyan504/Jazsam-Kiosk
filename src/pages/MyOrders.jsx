@@ -3,49 +3,7 @@ import './MyOrders.css';
 
 const TABS = ['All', 'Pending', 'Preparing', 'Ready for Pickup', 'Served', 'Expired'];
 
-const MOCK_ORDERS = [
-  {
-    id: '#151212',
-    date: 'Feb 21, 2026 · 2:14 PM',
-    items: ['1x Caramel Macchiato', '1x Matcha', '1x Fries'],
-    total: 'PHP 1,251.00',
-    note: '"Please include 2 cups of water and extra napkins."',
-    status: 'Pending',
-    expiresIn: '15 minutes',
-  },
-  {
-    id: '#151213',
-    date: 'Feb 21, 2026 · 2:14 PM',
-    items: ['1x Caramel Macchiato', '1x Matcha', '1x Fries'],
-    total: 'PHP 1,251.00',
-    note: '"Please include 2 cups of water and extra napkins."',
-    status: 'Preparing',
-  },
-  {
-    id: '#151214',
-    date: 'Feb 21, 2026 · 2:14 PM',
-    items: ['1x Caramel Macchiato', '1x Matcha', '1x Fries'],
-    total: 'PHP 1,251.00',
-    note: '"Please include 2 cups of water and extra napkins."',
-    status: 'Expired',
-  },
-  {
-    id: '#151215',
-    date: 'Feb 21, 2026 · 2:14 PM',
-    items: ['1x Caramel Macchiato', '1x Matcha', '1x Fries'],
-    total: 'PHP 1,251.00',
-    note: '"Please include 2 cups of water and extra napkins."',
-    status: 'Served',
-  },
-  {
-    id: '#151216',
-    date: 'Feb 21, 2026 · 2:14 PM',
-    items: ['1x Caramel Macchiato', '1x Matcha', '1x Fries'],
-    total: 'PHP 1,251.00',
-    note: '"Please include 2 cups of water and extra napkins."',
-    status: 'Ready for Pickup',
-  },
-];
+const MOCK_ORDERS = [];
 
 const STATUS_CONFIG = {
   Pending:          { label: 'Pending Payment', color: '#f59e0b' },
