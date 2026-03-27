@@ -115,26 +115,34 @@ export default function Home() {
   const [catIndex, setCatIndex] = useState(0);
   const [slideIndex, setSlideIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const timerRef = useRef(null);
 
   const currentCat = CATEGORIES[catIndex];
   const items = currentCat.items;
+
+  /* Smoothly switch to a new category with a fade transition */
+  const switchCategorySmooth = useCallback((newCatIndex, newSlide = 0) => {
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setCatIndex(newCatIndex);
+      setSlideIndex(newSlide);
+      setIsTransitioning(false);
+    }, 300); // matches CSS fade-out duration
+  }, []);
 
   /* Advance slide – when we reach the end, move to next category */
   const advance = useCallback(() => {
     setSlideIndex(prev => {
       const next = prev + 1;
       if (next >= items.length) {
-        // Move to next category
-        setCatIndex(ci => {
-          const nextCat = (ci + 1) % CATEGORIES.length;
-          return nextCat;
-        });
-        return 0; // reset slide
+        const nextCat = (catIndex + 1) % CATEGORIES.length;
+        switchCategorySmooth(nextCat, 0);
+        return prev; // hold until transition fires
       }
       return next;
     });
-  }, [items.length]);
+  }, [items.length, catIndex, switchCategorySmooth]);
 
   /* Auto-slide every 4 seconds */
   useEffect(() => {
@@ -148,8 +156,8 @@ export default function Home() {
   }
 
   function switchCategory(tabIndex) {
-    setCatIndex(tabIndex);
-    setSlideIndex(0);
+    if (tabIndex === catIndex) return;
+    switchCategorySmooth(tabIndex, 0);
   }
 
   /* Get class for each card position */
@@ -205,7 +213,8 @@ export default function Home() {
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
           >
-            <div className="carousel__track">
+            {/* Category label */}
+            <div className={`carousel__track${isTransitioning ? ' carousel__track--fade' : ''}`}>
               {items.map((item, i) => {
                 const pos = getCardPosition(i);
                 const isCenter = pos === 'carousel__card--center';
