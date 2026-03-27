@@ -21,9 +21,9 @@
 }
 
 .menu-page__hero-title {
-  font-family: var(--font-display);
+  font-family: var(--font-sans);
   font-size: clamp(2rem, 5vw, 3.5rem);
-  font-weight: 400;
+  font-weight: 800;
   color: #fff;
 }
 
@@ -56,7 +56,7 @@
 }
 
 .menu-categories__heading {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-size: 1.2rem;
   font-weight: 700;
   margin-bottom: 16px;
@@ -128,7 +128,7 @@
 }
 
 .menu-grid-section__title {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-size: 1.4rem;
   font-weight: 700;
   color: var(--color-dark);

@@ -2,27 +2,85 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import './Home.css';
 
-const FEATURED = [
+/* ─── Category data with featured items ─── */
+const CATEGORIES = [
   {
-    id: 1,
-    name: 'Spanish Latte',
-    desc: 'A light, buttery taste with delicate floral notes and a golden, crisp undertone — silky smooth and rich, satisfying same in everyday.',
-    img: '/spanish_latte.png',
-    tag: 'Best Seller',
+    tab: 'Coffee',
+    items: [
+      {
+        id: 'c1',
+        name: 'Spanish Latte',
+        desc: 'A light, buttery taste with delicate floral notes and a golden, crisp undertone — silky smooth and rich, satisfying same in everyday.',
+        img: '/spanish_latte.png',
+        tag: 'Best Seller',
+      },
+      {
+        id: 'c2',
+        name: 'Spanish Latte',
+        desc: 'A light, buttery taste with delicate floral notes and a golden, crisp undertone — silky smooth and rich.',
+        img: '/spanish_latte.png',
+        tag: null,
+      },
+      {
+        id: 'c3',
+        name: 'Spanish Latte',
+        desc: 'A light, buttery taste with delicate floral notes and a golden, crisp undertone — silky smooth and rich.',
+        img: '/spanish_latte.png',
+        tag: null,
+      },
+    ],
   },
   {
-    id: 2,
-    name: 'Spanish Latte',
-    desc: 'A light, buttery taste with delicate floral notes and a golden, crisp undertone — silky smooth and rich.',
-    img: '/spanish_latte.png',
-    tag: null,
+    tab: 'Milkteas',
+    items: [
+      {
+        id: 'm1',
+        name: 'Classic Milktea',
+        desc: 'A rich and creamy blend of premium black tea and fresh milk — timeless comfort in every sip.',
+        img: '/milktea-highlight.png',
+        tag: 'Popular',
+      },
+      {
+        id: 'm2',
+        name: 'Taro Milktea',
+        desc: 'Smooth taro flavor blended with creamy milk tea — a sweet, earthy indulgence you\'ll crave.',
+        img: '/milktea-highlight.png',
+        tag: null,
+      },
+      {
+        id: 'm3',
+        name: 'Wintermelon',
+        desc: 'A refreshing wintermelon infusion with silky milk tea — light, sweet, and perfectly balanced.',
+        img: '/milktea-highlight.png',
+        tag: null,
+      },
+    ],
   },
   {
-    id: 3,
-    name: 'Spanish Latte',
-    desc: 'A light, buttery taste with delicate floral notes and a golden, crisp undertone — silky smooth and rich.',
-    img: '/spanish_latte.png',
-    tag: null,
+    tab: 'Specials',
+    items: [
+      {
+        id: 's1',
+        name: 'Loaded Fries',
+        desc: 'Crispy golden fries topped with savory cheese sauce, bacon bits, and a drizzle of special Jazsam sauce.',
+        img: '/fries-highlight.png',
+        tag: 'Fan Favorite',
+      },
+      {
+        id: 's2',
+        name: 'Classic Fries',
+        desc: 'Perfectly salted, golden-crisp fries — the ideal companion to any Jazsam drink.',
+        img: '/fries-highlight.png',
+        tag: null,
+      },
+      {
+        id: 's3',
+        name: 'Cheesy Fries',
+        desc: 'Our signature fries smothered in warm, melted cheese — a crowd favorite every day.',
+        img: '/fries-highlight.png',
+        tag: null,
+      },
+    ],
   },
 ];
 
@@ -53,37 +111,54 @@ const TESTIMONIALS = [
   },
 ];
 
-const TABS = ['Coffee', 'Milkteas', 'Specials'];
-
 export default function Home() {
-  const [activeTab, setActiveTab] = useState('Coffee');
-  const [activeSlide, setActiveSlide] = useState(0);
+  const [catIndex, setCatIndex] = useState(0);
+  const [slideIndex, setSlideIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const timerRef = useRef(null);
 
-  const totalSlides = FEATURED.length;
+  const currentCat = CATEGORIES[catIndex];
+  const items = currentCat.items;
 
-  const goToSlide = useCallback((index) => {
-    setActiveSlide((index + totalSlides) % totalSlides);
-  }, [totalSlides]);
-
-  const nextSlide = useCallback(() => {
-    goToSlide(activeSlide + 1);
-  }, [activeSlide, goToSlide]);
+  /* Advance slide – when we reach the end, move to next category */
+  const advance = useCallback(() => {
+    setSlideIndex(prev => {
+      const next = prev + 1;
+      if (next >= items.length) {
+        // Move to next category
+        setCatIndex(ci => {
+          const nextCat = (ci + 1) % CATEGORIES.length;
+          return nextCat;
+        });
+        return 0; // reset slide
+      }
+      return next;
+    });
+  }, [items.length]);
 
   /* Auto-slide every 4 seconds */
   useEffect(() => {
     if (isPaused) return;
-    timerRef.current = setInterval(nextSlide, 4000);
+    timerRef.current = setInterval(advance, 4000);
     return () => clearInterval(timerRef.current);
-  }, [nextSlide, isPaused]);
+  }, [advance, isPaused]);
 
-  /* Get class name for each card based on position relative to active */
+  function goToSlide(index) {
+    setSlideIndex(((index % items.length) + items.length) % items.length);
+  }
+
+  function switchCategory(tabIndex) {
+    setCatIndex(tabIndex);
+    setSlideIndex(0);
+  }
+
+  /* Get class for each card position */
   function getCardPosition(index) {
-    const diff = index - activeSlide;
+    const total = items.length;
+    const diff = ((index - slideIndex) % total + total) % total;
     if (diff === 0) return 'carousel__card--center';
-    if (diff === -1 || (activeSlide === 0 && index === totalSlides - 1)) return 'carousel__card--left';
-    if (diff === 1 || (activeSlide === totalSlides - 1 && index === 0)) return 'carousel__card--right';
+    if (diff === total - 1) return 'carousel__card--left';
+    if (diff === 1) return 'carousel__card--right';
     return 'carousel__card--hidden';
   }
 
@@ -131,38 +206,42 @@ export default function Home() {
             onMouseLeave={() => setIsPaused(false)}
           >
             <div className="carousel__track">
-              {FEATURED.map((item, i) => (
-                <div
-                  key={item.id}
-                  className={`carousel__card ${getCardPosition(i)}`}
-                  onClick={() => goToSlide(i)}
-                >
-                  {item.tag && <span className="featured__card-tag">{item.tag}</span>}
-                  <div className="carousel__card-img-wrap">
-                    <img src={item.img} alt={item.name} className="carousel__card-img" />
+              {items.map((item, i) => {
+                const pos = getCardPosition(i);
+                const isCenter = pos === 'carousel__card--center';
+                return (
+                  <div
+                    key={item.id}
+                    className={`carousel__card ${pos}`}
+                    onClick={() => goToSlide(i)}
+                  >
+                    {item.tag && <span className="featured__card-tag">{item.tag}</span>}
+                    <div className="carousel__card-img-wrap">
+                      <img src={item.img} alt={item.name} className="carousel__card-img" />
+                    </div>
+                    <div className="carousel__card-body">
+                      <h3 className="carousel__card-name">{item.name}</h3>
+                      <p className="carousel__card-desc">{item.desc}</p>
+                      {isCenter && (
+                        <Link to="/menu" className="btn-primary carousel__card-btn">GET BREWING</Link>
+                      )}
+                    </div>
                   </div>
-                  <div className="carousel__card-body">
-                    <h3 className="carousel__card-name">{item.name}</h3>
-                    <p className="carousel__card-desc">{item.desc}</p>
-                    {getCardPosition(i) === 'carousel__card--center' && (
-                      <Link to="/menu" className="btn-primary carousel__card-btn">GET BREWING</Link>
-                    )}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Navigation arrows */}
             <button
               className="carousel__arrow carousel__arrow--left"
-              onClick={() => goToSlide(activeSlide - 1)}
+              onClick={() => goToSlide(slideIndex - 1)}
               aria-label="Previous slide"
             >
               ‹
             </button>
             <button
               className="carousel__arrow carousel__arrow--right"
-              onClick={() => goToSlide(activeSlide + 1)}
+              onClick={() => goToSlide(slideIndex + 1)}
               aria-label="Next slide"
             >
               ›
@@ -170,10 +249,10 @@ export default function Home() {
 
             {/* Dots */}
             <div className="carousel__dots">
-              {FEATURED.map((_, i) => (
+              {items.map((_, i) => (
                 <button
                   key={i}
-                  className={`carousel__dot${activeSlide === i ? ' carousel__dot--active' : ''}`}
+                  className={`carousel__dot${slideIndex === i ? ' carousel__dot--active' : ''}`}
                   onClick={() => goToSlide(i)}
                   aria-label={`Go to slide ${i + 1}`}
                 />
@@ -181,15 +260,15 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Tab bar – BELOW the carousel */}
+          {/* Tab bar – BELOW the carousel, auto-synced */}
           <div className="featured__tabs">
-            {TABS.map(tab => (
+            {CATEGORIES.map((cat, ci) => (
               <button
-                key={tab}
-                className={`featured__tab${activeTab === tab ? ' featured__tab--active' : ''}`}
-                onClick={() => setActiveTab(tab)}
+                key={cat.tab}
+                className={`featured__tab${catIndex === ci ? ' featured__tab--active' : ''}`}
+                onClick={() => switchCategory(ci)}
               >
-                {tab}
+                {cat.tab}
               </button>
             ))}
           </div>

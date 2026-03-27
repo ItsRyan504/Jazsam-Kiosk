@@ -1,7 +1,7 @@
 /* ── Hero ── */
 .about__hero {
   position: relative;
-  height: 320px;
+  height: 280px;
   background: #1a1a1a;
   display: flex;
   align-items: flex-end;
@@ -32,8 +32,9 @@
 .about__hero-inner {
   position: relative;
   z-index: 2;
-  padding-bottom: 48px;
+  padding-bottom: 40px;
   padding-top: 64px;
+  width: 100%;
 }
 
 .about__hero-title {
@@ -42,7 +43,8 @@
   font-weight: 800;
   color: #fff;
   line-height: 1;
-  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.3);
+  text-align: left;
 }
 
 /* ── Sections ── */
