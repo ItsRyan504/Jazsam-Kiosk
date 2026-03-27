@@ -204,12 +204,6 @@
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  transition: opacity 0.3s ease;
-  opacity: 1;
-}
-
-.carousel__track--fade {
-  opacity: 0;
 }
 
 /* ── Base card ── */
