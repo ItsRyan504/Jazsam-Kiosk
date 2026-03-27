@@ -45,6 +45,48 @@ function EditIcon() {
   );
 }
 
+/* ─── Guest Sign In Modal (via Portal) ──────────── */
+function GuestSignInModal({ item, onClose, onLogin, onSignUp }) {
+  return createPortal(
+    <div className="item-modal-overlay" onClick={onClose}>
+      <div className="item-modal guest-signin-modal" onClick={e => e.stopPropagation()}>
+        <button className="item-modal__close" onClick={onClose} aria-label="Close">✕</button>
+
+        <div className="guest-signin-modal__img-wrap">
+          <img src={item.img} alt={item.name} className="item-modal__img" />
+        </div>
+
+        <div className="guest-signin-modal__body">
+          <div className="guest-signin-modal__lock">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+          </div>
+          <h2 className="guest-signin-modal__title">Sign in to order</h2>
+          <p className="guest-signin-modal__desc">
+            Create an account or log in to add <strong>{item.name}</strong> to your cart and start ordering.
+          </p>
+
+          <div className="guest-signin-modal__actions">
+            <button className="guest-signin-modal__btn guest-signin-modal__btn--primary" onClick={onLogin}>
+              Log in
+            </button>
+            <button className="guest-signin-modal__btn guest-signin-modal__btn--outline" onClick={onSignUp}>
+              Create an account
+            </button>
+          </div>
+
+          <p className="guest-signin-modal__footer-text">
+            Browse the menu freely — sign in when you're ready!
+          </p>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 /* ─── Item Detail Modal (via Portal) ───────────── */
 function ItemModal({ item, onClose, onAddToCart }) {
   const [qty,  setQty]  = useState(1);
@@ -230,6 +272,7 @@ export default function Menu() {
   const [selectedItem,       setSelectedItem]       = useState(null);
   const [showCheckout,       setShowCheckout]       = useState(false);
   const [cartItems,          setCartItems]          = useState([]);
+  const [guestItem,          setGuestItem]          = useState(null);
 
   const items = MENU_DATA[activeCategory] ?? [];
   const filtered =
@@ -239,6 +282,15 @@ export default function Menu() {
 
   const sectionLabel =
     activeCategory.charAt(0).toUpperCase() + activeCategory.slice(1);
+
+  /* ── Card click handler ── */
+  function handleItemClick(item) {
+    if (user) {
+      setSelectedItem(item);
+    } else {
+      setGuestItem(item);
+    }
+  }
 
   /* ── Cart handlers ── */
   function addToCart({ qty, note, ...item }) {
@@ -327,7 +379,7 @@ export default function Menu() {
                   key={item.id}
                   className="menu-item-card"
                   id={`item-${activeCategory}-${item.id}`}
-                  onClick={() => user ? setSelectedItem(item) : null}
+                  onClick={() => handleItemClick(item)}
                 >
                   <div className="menu-item-card__img-wrap">
                     <img src={item.img} alt={item.name} className="menu-item-card__img" />
@@ -352,6 +404,16 @@ export default function Menu() {
           />
         )}
       </div>
+
+      {/* Guest sign-in modal — portal to body */}
+      {guestItem && (
+        <GuestSignInModal
+          item={guestItem}
+          onClose={() => setGuestItem(null)}
+          onLogin={() => navigate('/login')}
+          onSignUp={() => navigate('/login')}
+        />
+      )}
 
       {/* Item modal — portal to body */}
       {selectedItem && (

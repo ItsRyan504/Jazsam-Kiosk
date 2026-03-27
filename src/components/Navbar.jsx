@@ -41,6 +41,7 @@ export default function Navbar() {
     { to: '/',         label: 'Home'     },
     { to: '/menu',     label: 'Menu'     },
     { to: '/about',    label: 'About'    },
+    { to: '/rewards',  label: 'Rewards'  },
     { to: '/location', label: 'Location' },
   ];
 

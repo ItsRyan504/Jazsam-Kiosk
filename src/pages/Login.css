@@ -390,6 +390,36 @@
   text-underline-offset: 2px;
 }
 
+/* ---- Error banner ---- */
+.login-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  color: #b91c1c;
+  font-size: 0.82rem;
+  font-weight: 500;
+  margin-bottom: 8px;
+  animation: shakeIn 0.35s ease;
+}
+
+.login-error-banner svg {
+  flex-shrink: 0;
+  stroke: #dc2626;
+}
+
+@keyframes shakeIn {
+  0%   { transform: translateX(0); }
+  25%  { transform: translateX(-6px); }
+  50%  { transform: translateX(6px); }
+  75%  { transform: translateX(-3px); }
+  100% { transform: translateX(0); }
+}
+
 @media (max-width: 480px) {
   .login-card {
     padding: 36px 24px;

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import './Home.css';
 
@@ -57,30 +57,54 @@ const TABS = ['Coffee', 'Milkteas', 'Specials'];
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('Coffee');
+  const [activeSlide, setActiveSlide] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const timerRef = useRef(null);
+
+  const totalSlides = FEATURED.length;
+
+  const goToSlide = useCallback((index) => {
+    setActiveSlide((index + totalSlides) % totalSlides);
+  }, [totalSlides]);
+
+  const nextSlide = useCallback(() => {
+    goToSlide(activeSlide + 1);
+  }, [activeSlide, goToSlide]);
+
+  /* Auto-slide every 4 seconds */
+  useEffect(() => {
+    if (isPaused) return;
+    timerRef.current = setInterval(nextSlide, 4000);
+    return () => clearInterval(timerRef.current);
+  }, [nextSlide, isPaused]);
+
+  /* Get class name for each card based on position relative to active */
+  function getCardPosition(index) {
+    const diff = index - activeSlide;
+    if (diff === 0) return 'carousel__card--center';
+    if (diff === -1 || (activeSlide === 0 && index === totalSlides - 1)) return 'carousel__card--left';
+    if (diff === 1 || (activeSlide === totalSlides - 1 && index === 0)) return 'carousel__card--right';
+    return 'carousel__card--hidden';
+  }
 
   return (
     <main className="home">
       {/* ────────── HERO ────────── */}
       <section className="hero">
-        {/* Blurred bokeh background ONLY — no cup here */}
         <div className="hero__bg-bokeh" />
-        {/* Subtle overlay for text legibility */}
         <div className="hero__overlay" />
 
-        {/* Centered text block */}
         <div className="hero__centered">
           <p className="hero__eyebrow-text">This is Jazsam Coffee</p>
           <h1 className="hero__headline">Where every sip tells a tale.</h1>
         </div>
 
-        {/* Coffee cup — SHARP, no blur, positioned at bottom center */}
         <img
           src="/hero_cup_blended.png"
           alt="Jazsam iced coffee"
           className="hero__cup-img"
         />
 
-        {/* Bottom-left social handle */}
         <div className="hero__social-handle">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
             <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
@@ -89,7 +113,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ────────── FEATURED ────────── */}
+      {/* ────────── FEATURED CAROUSEL ────────── */}
       <section className="featured section-pad">
         <div className="container">
           <div className="featured__header">
@@ -100,29 +124,64 @@ export default function Home() {
             <Link to="/menu" className="featured__view-link">View Full Menu →</Link>
           </div>
 
-          {/* Cards – tabs now at the BOTTOM */}
-          <div className="featured__cards">
-            {FEATURED.map((item, i) => (
-              <div
-                key={item.id}
-                className={`featured__card${i === 1 ? ' featured__card--center' : ''}`}
-              >
-                {item.tag && <span className="featured__card-tag">{item.tag}</span>}
-                <div className="featured__card-img-wrap">
-                  <img src={item.img} alt={item.name} className="featured__card-img" />
+          {/* Carousel */}
+          <div
+            className="carousel"
+            onMouseEnter={() => setIsPaused(true)}
+            onMouseLeave={() => setIsPaused(false)}
+          >
+            <div className="carousel__track">
+              {FEATURED.map((item, i) => (
+                <div
+                  key={item.id}
+                  className={`carousel__card ${getCardPosition(i)}`}
+                  onClick={() => goToSlide(i)}
+                >
+                  {item.tag && <span className="featured__card-tag">{item.tag}</span>}
+                  <div className="carousel__card-img-wrap">
+                    <img src={item.img} alt={item.name} className="carousel__card-img" />
+                  </div>
+                  <div className="carousel__card-body">
+                    <h3 className="carousel__card-name">{item.name}</h3>
+                    <p className="carousel__card-desc">{item.desc}</p>
+                    {getCardPosition(i) === 'carousel__card--center' && (
+                      <Link to="/menu" className="btn-primary carousel__card-btn">GET BREWING</Link>
+                    )}
+                  </div>
                 </div>
-                <div className="featured__card-body">
-                  <h3 className="featured__card-name">{item.name}</h3>
-                  <p className="featured__card-desc">{item.desc}</p>
-                  {i === 1 && (
-                    <button className="btn-primary featured__card-btn">GET BREWING</button>
-                  )}
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
+
+            {/* Navigation arrows */}
+            <button
+              className="carousel__arrow carousel__arrow--left"
+              onClick={() => goToSlide(activeSlide - 1)}
+              aria-label="Previous slide"
+            >
+              ‹
+            </button>
+            <button
+              className="carousel__arrow carousel__arrow--right"
+              onClick={() => goToSlide(activeSlide + 1)}
+              aria-label="Next slide"
+            >
+              ›
+            </button>
+
+            {/* Dots */}
+            <div className="carousel__dots">
+              {FEATURED.map((_, i) => (
+                <button
+                  key={i}
+                  className={`carousel__dot${activeSlide === i ? ' carousel__dot--active' : ''}`}
+                  onClick={() => goToSlide(i)}
+                  aria-label={`Go to slide ${i + 1}`}
+                />
+              ))}
+            </div>
           </div>
 
-          {/* Tab bar – BELOW the cards */}
+          {/* Tab bar – BELOW the carousel */}
           <div className="featured__tabs">
             {TABS.map(tab => (
               <button
@@ -246,7 +305,6 @@ export default function Home() {
       {/* ────────── GOT THOUGHTS / REVIEWS ────────── */}
       <section className="reviews-section section-pad">
         <div className="container reviews-section__inner">
-          {/* Left: CTA text */}
           <div className="reviews-section__left">
             <p className="reviews-section__got">Got thoughts?</p>
             <p className="reviews-section__headline"><strong>Help us improve.</strong></p>
@@ -255,19 +313,16 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Right: label + cards */}
           <div className="reviews-section__right">
             <p className="reviews-section__label">Leave a review on the following platforms:</p>
             <div className="reviews-section__cards">
 
-              {/* Google Maps card */}
               <a
                 href="https://search.google.com/local/writereview?placeid=ChIJLWMGb3GpqTMRqmKP8p6-3mA"
                 className="rev-card"
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                {/* Google Maps pin icon */}
                 <div className="rev-card__icon rev-card__icon--maps">
                   <img src="/gmap.png" alt="Google Maps" width="40" height="40" style={{ objectFit: 'contain' }} />
                 </div>
@@ -286,7 +341,6 @@ export default function Home() {
                 </div>
               </a>
 
-              {/* Facebook card */}
               <a
                 href="https://www.facebook.com/jazsamcoffee"
                 className="rev-card"

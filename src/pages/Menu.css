@@ -745,3 +745,121 @@
   border-top: 1px solid var(--color-border);
   margin-top: 4px;
 }
+
+/* ══════════════════════════════════════
+   GUEST SIGN-IN MODAL
+   ══════════════════════════════════════ */
+.guest-signin-modal {
+  max-width: 400px;
+  text-align: center;
+}
+
+.guest-signin-modal__img-wrap {
+  background: linear-gradient(135deg, var(--color-cream), #efe5d5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 28px 24px 20px;
+  position: relative;
+}
+
+.guest-signin-modal__img-wrap::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center bottom, rgba(107, 66, 38, 0.12), transparent 70%);
+  pointer-events: none;
+}
+
+.guest-signin-modal__body {
+  padding: 24px 28px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.guest-signin-modal__lock {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f5ede0, #efe5d5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-brown);
+  margin-bottom: 4px;
+  animation: lockPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes lockPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+
+.guest-signin-modal__title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--color-dark);
+  margin-bottom: 2px;
+}
+
+.guest-signin-modal__desc {
+  font-size: 0.85rem;
+  color: var(--color-muted);
+  line-height: 1.6;
+  max-width: 280px;
+  margin-bottom: 8px;
+}
+
+.guest-signin-modal__desc strong {
+  color: var(--color-dark);
+}
+
+.guest-signin-modal__actions {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.guest-signin-modal__btn {
+  width: 100%;
+  padding: 13px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.guest-signin-modal__btn--primary {
+  background: var(--color-dark);
+  color: #fff;
+  border: none;
+}
+
+.guest-signin-modal__btn--primary:hover {
+  background: #333;
+  transform: translateY(-1px);
+}
+
+.guest-signin-modal__btn--outline {
+  background: transparent;
+  color: var(--color-dark);
+  border: 1.5px solid var(--color-dark);
+}
+
+.guest-signin-modal__btn--outline:hover {
+  background: var(--color-dark);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.guest-signin-modal__footer-text {
+  font-size: 0.75rem;
+  color: var(--color-muted);
+  margin-top: 8px;
+}

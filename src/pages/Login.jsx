@@ -36,7 +36,7 @@ const PW_RULES = [
 export default function Login() {
   const [view, setView] = useState('login');
   const navigate        = useNavigate();
-  const { login }       = useAuth();
+  const { login, register } = useAuth();
 
   /* ── Login state ── */
   const [loginEmail,  setLoginEmail]  = useState('');
@@ -65,10 +65,18 @@ export default function Login() {
     e.preventDefault();
     const errs = {};
     if (!loginEmail.trim()) errs.email = 'Email is required';
-    if (!loginPw)           errs.pw    = 'Password is required';
+    else if (!/\S+@\S+\.\S+/.test(loginEmail)) errs.email = 'Please enter a valid email address';
+    if (!loginPw) errs.pw = 'Password is required';
     if (Object.keys(errs).length) { setLoginErr(errs); return; }
+
+    // Validate against local storage
+    const result = login({ email: loginEmail, password: loginPw });
+    if (!result.success) {
+      setLoginErr({ general: result.error });
+      return;
+    }
+
     setLoginErr({});
-    login({ name: 'Customer', email: loginEmail });
     navigate('/');
   }
 
@@ -86,6 +94,8 @@ export default function Login() {
     if (!reg1.firstName.trim()) errs.firstName = 'First name is required';
     if (!reg1.lastName.trim())  errs.lastName  = 'Last name is required';
     if (!reg1.email.trim())     errs.email     = 'Email is required';
+    else if (!/\S+@\S+\.\S+/.test(reg1.email)) errs.email = 'Please enter a valid email address';
+    if (reg1.phone && !/^[0-9+\-() ]{7,15}$/.test(reg1.phone)) errs.phone = 'Please enter a valid contact number';
     if (Object.keys(errs).length) { setReg1Err(errs); return; }
     setReg1Err({});
     setView('register-step2');
@@ -98,8 +108,22 @@ export default function Login() {
     if (!allPass)               errs.pw      = 'Password does not meet all requirements';
     if (password !== confirmPw) errs.confirm = 'Password does not match!';
     if (Object.keys(errs).length) { setReg2Err(errs); return; }
+
+    // Register via context (validates duplicate email)
+    const result = register({
+      firstName: reg1.firstName,
+      lastName:  reg1.lastName,
+      email:     reg1.email,
+      phone:     reg1.phone,
+      password,
+    });
+
+    if (!result.success) {
+      setReg2Err({ general: result.error });
+      return;
+    }
+
     setReg2Err({});
-    login({ name: reg1.firstName, email: reg1.email });
     navigate('/');
   }
 
@@ -117,6 +141,15 @@ export default function Login() {
         <div className="login-card">
           <Logo />
           <h1 className="login-title">Log in to JazSam</h1>
+
+          {loginErr.general && (
+            <div className="login-error-banner">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+              </svg>
+              <span>{loginErr.general}</span>
+            </div>
+          )}
 
           <form className="login-form" onSubmit={handleLogin} noValidate>
 
@@ -302,7 +335,7 @@ export default function Login() {
               {reg1Err.email && <p className="field-error">{reg1Err.email}</p>}
             </div>
 
-            <div className="login-field floating">
+            <div className={`login-field floating${reg1Err.phone ? ' has-error' : ''}`}>
               <input
                 id="reg-phone"
                 type="tel"
@@ -312,6 +345,7 @@ export default function Login() {
                 autoComplete="tel"
               />
               <label htmlFor="reg-phone">Contact number (optional)</label>
+              {reg1Err.phone && <p className="field-error">{reg1Err.phone}</p>}
             </div>
 
             <button type="submit" className="login-btn-primary">Next</button>
@@ -333,6 +367,15 @@ export default function Login() {
       <div className="login-card">
         <Logo />
         <h1 className="login-title">Create an account</h1>
+
+        {reg2Err.general && (
+          <div className="login-error-banner">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+            </svg>
+            <span>{reg2Err.general}</span>
+          </div>
+        )}
 
         <form className="login-form" onSubmit={handleCreateAccount} noValidate>
 

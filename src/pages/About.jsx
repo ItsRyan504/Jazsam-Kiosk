@@ -74,7 +74,9 @@ export default function About() {
             </p>
           </div>
           <div className="about__image-block about__image-block--placeholder">
-            <div className="about__placeholder-img" />
+            <div className="about__placeholder-img">
+              <img src="/mission-pic.png" alt="Mission and Vision" className="about__img" />
+            </div>
           </div>
         </div>
       </section>
