@@ -66,11 +66,22 @@ export default function Home() {
     if (signed === 0)  return 'carousel__card--center';
     if (signed === -1) return 'carousel__card--left';
     if (signed === 1)  return 'carousel__card--right';
-    return 'carousel__card--hidden';
+    if (signed <= -2)  return 'carousel__card--hidden-left';
+    return 'carousel__card--hidden-right';
   }
 
-  /* Render only center ± 2 to keep DOM lean */
-  const visibleIndices = [-1, 0, 1].map(offset => wrap(center + offset));
+  /* Render center ± 2 so off-screen neighbors can animate in/out */
+  const visibleIndices = [-2, -1, 0, 1, 2].map(offset => wrap(center + offset));
+
+  /* Touch swipe */
+  const touchStartX = useRef(null);
+  function handleTouchStart(e) { touchStartX.current = e.touches[0].clientX; }
+  function handleTouchEnd(e) {
+    if (touchStartX.current === null) return;
+    const delta = e.changedTouches[0].clientX - touchStartX.current;
+    if (Math.abs(delta) > 40) delta < 0 ? goTo(center + 1) : goTo(center - 1);
+    touchStartX.current = null;
+  }
 
   return (
     <main className="home">
@@ -106,6 +117,8 @@ export default function Home() {
             className="carousel"
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
           >
             <div className="carousel__track">
               {visibleIndices.map(realIdx => {

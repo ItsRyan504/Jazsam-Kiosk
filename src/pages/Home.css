@@ -216,12 +216,15 @@
   padding: 24px;
   padding-top: 80px;
   border: 1px solid var(--color-border);
-  transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              opacity 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              box-shadow 0.5s ease;
   cursor: pointer;
   opacity: 0;
   pointer-events: none;
-  transform: scale(0.8) translateX(0);
+  transform: scale(0.8) translate3d(0, 0, 0);
   overflow: visible;
+  will-change: transform, opacity;
 }
 
 .featured__card-tag {
@@ -244,25 +247,25 @@
   z-index: 10;
   opacity: 1;
   pointer-events: auto;
-  transform: scale(1) translateX(0);
-  background: var(--color-dark);
-  color: #fff;
+  transform: scale(1) translate3d(0, 0, 0);
+  background: #fff;
+  color: var(--color-dark);
   padding: 32px;
   padding-top: 140px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  border-color: transparent;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.14);
+  border-color: var(--color-border);
   border-radius: 24px;
   width: 340px;
   overflow: visible;
 }
 
 .carousel__card--center .carousel__card-name {
-  color: #fff;
+  color: var(--color-dark);
   font-size: 1.25rem;
 }
 
 .carousel__card--center .carousel__card-desc {
-  color: rgba(255, 255, 255, 0.65);
+  color: var(--color-muted);
 }
 
 /* ── Image positioning ── */
@@ -312,7 +315,7 @@
   z-index: 5;
   opacity: 1;
   pointer-events: auto;
-  transform: scale(0.88) translateX(-115%);
+  transform: scale(0.88) translate3d(-115%, 0, 0);
   padding-top: 24px;
 }
 
@@ -321,15 +324,21 @@
   z-index: 5;
   opacity: 1;
   pointer-events: auto;
-  transform: scale(0.88) translateX(115%);
+  transform: scale(0.88) translate3d(115%, 0, 0);
   padding-top: 24px;
 }
 
-/* ── Hidden cards ── */
-.carousel__card--hidden {
+/* ── Hidden cards (directional so entering cards slide from off-screen) ── */
+.carousel__card--hidden-left {
   opacity: 0;
   pointer-events: none;
-  transform: scale(0.7) translateX(0);
+  transform: scale(0.7) translate3d(-230%, 0, 0);
+}
+
+.carousel__card--hidden-right {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.7) translate3d(230%, 0, 0);
 }
 
 /* ── Card content ── */
@@ -355,15 +364,15 @@
 .carousel__card-btn {
   width: 100%;
   justify-content: center;
-  background: #fff;
-  color: var(--color-dark);
+  background: var(--color-dark);
+  color: #fff;
   font-size: 0.82rem;
   text-align: center;
   display: block;
 }
 .carousel__card-btn:hover {
-  background: var(--color-cream);
-  color: var(--color-dark);
+  background: var(--color-brown);
+  color: #fff;
 }
 
 /* ── Navigation Arrows ── */
