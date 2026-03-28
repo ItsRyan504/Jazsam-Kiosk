@@ -130,6 +130,7 @@
    ===================== */
 .featured {
   background: var(--color-bg);
+  overflow-x: hidden;
 }
 
 .featured__header {
@@ -787,11 +788,19 @@
   }
 
   .carousel__card--left {
-    transform: scale(0.85) translateX(-100%);
+    transform: scale(0.85) translate3d(-100%, 0, 0);
   }
 
   .carousel__card--right {
-    transform: scale(0.85) translateX(100%);
+    transform: scale(0.85) translate3d(100%, 0, 0);
+  }
+
+  .carousel__card--hidden-left {
+    transform: scale(0.7) translate3d(-210%, 0, 0);
+  }
+
+  .carousel__card--hidden-right {
+    transform: scale(0.7) translate3d(210%, 0, 0);
   }
 
   .featured__header {
@@ -815,13 +824,13 @@
   }
 
   .carousel__card {
-    width: 240px;
+    width: 220px;
     padding: 20px;
     padding-top: 60px;
   }
 
   .carousel__card--center {
-    width: 280px;
+    width: 270px;
     padding: 24px;
     padding-top: 120px;
   }
@@ -832,13 +841,21 @@
   }
 
   .carousel__card--left {
-    transform: scale(0.82) translateX(-80%);
-    opacity: 0.6;
+    transform: scale(0.82) translate3d(-95%, 0, 0);
+    opacity: 0.55;
   }
 
   .carousel__card--right {
-    transform: scale(0.82) translateX(80%);
-    opacity: 0.6;
+    transform: scale(0.82) translate3d(95%, 0, 0);
+    opacity: 0.55;
+  }
+
+  .carousel__card--hidden-left {
+    transform: scale(0.7) translate3d(-200%, 0, 0);
+  }
+
+  .carousel__card--hidden-right {
+    transform: scale(0.7) translate3d(200%, 0, 0);
   }
 
   .carousel__card-img {
@@ -861,6 +878,7 @@
   }
 }
 
+/* ── Single-card layout on small phones ── */
 @media (max-width: 600px) {
   .hero {
     max-height: 600px;
@@ -871,16 +889,38 @@
   }
 
   .carousel {
-    height: 440px;
+    height: 420px;
   }
 
+  /* Side cards completely hidden — show only center */
   .carousel__card--left,
-  .carousel__card--right {
-    opacity: 0.3;
-    transform: scale(0.75) translateX(-60%);
+  .carousel__card--right,
+  .carousel__card--hidden-left,
+  .carousel__card--hidden-right {
+    opacity: 0 !important;
+    pointer-events: none !important;
   }
 
-  .carousel__card--right {
-    transform: scale(0.75) translateX(60%);
+  /* Center card takes full width */
+  .carousel__card--center {
+    width: min(88vw, 320px);
+    padding: 20px;
+    padding-top: 120px;
   }
+
+  .carousel__card--center .carousel__card-img {
+    width: 150px;
+    height: 150px;
+  }
+
+  /* Arrows sit flush at the card edges */
+  .carousel__arrow {
+    top: 50%;
+    width: 34px;
+    height: 34px;
+    font-size: 1rem;
+  }
+
+  .carousel__arrow--left  { left: 4px; }
+  .carousel__arrow--right { right: 4px; }
 }
