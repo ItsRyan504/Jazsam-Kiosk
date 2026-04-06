@@ -420,6 +420,26 @@
   100% { transform: translateX(0); }
 }
 
+/* ---- Btn Admin (subtle ghost) ---- */
+.login-btn-admin {
+  margin-top: 12px;
+  background: none;
+  border: 1.5px solid #d4cdc5;
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-size: 0.82rem;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  color: #a89f96;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.login-btn-admin:hover {
+  border-color: var(--color-dark);
+  color: var(--color-dark);
+}
+
 @media (max-width: 480px) {
   .login-card {
     padding: 36px 24px;

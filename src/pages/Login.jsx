@@ -213,6 +213,14 @@ export default function Login() {
           <span className="login-back-link" onClick={() => navigate('/')}>
             ← Back to Home
           </span>
+
+          <button
+            type="button"
+            className="login-btn-admin"
+            onClick={() => navigate('/admin')}
+          >
+          Staff Login 
+          </button>
         </div>
       </div>
     );
