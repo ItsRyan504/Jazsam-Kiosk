@@ -1,14 +1,12 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
+import { useStore } from './StoreContext';
 
 const OrdersContext = createContext(null);
 
 export function OrdersProvider({ children }) {
-  const [orders, setOrders] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('jazsam_orders')) || []; }
-    catch { return []; }
-  });
   const { user, addPoints } = useAuth();
+  const store = useStore();
 
   function placeOrder(cartItems, note = '') {
     const now = new Date();
@@ -24,6 +22,7 @@ export function OrdersProvider({ children }) {
     const newOrder = {
       id: `#${Math.floor(100000 + Math.random() * 900000)}`,
       userId: user?.id || 'guest',
+      customer: user?.name || 'Guest',
       date: `${dateStr} · ${timeStr}`,
       items: cartItems.map(i => `${i.qty}x ${i.name}`),
       total,
@@ -32,9 +31,15 @@ export function OrdersProvider({ children }) {
       expiresIn: '15 minutes',
     };
 
-    const updated = [newOrder, ...orders];
-    setOrders(updated);
+    // Write to StoreContext (which persists in localStorage)
+    store.orders; // read first
+    const currentOrders = JSON.parse(localStorage.getItem('jazsam_orders') || '[]');
+    const updated = [newOrder, ...currentOrders];
     localStorage.setItem('jazsam_orders', JSON.stringify(updated));
+
+    // Force a re-render by updating StoreContext directly
+    // The StoreContext reads from localStorage, so forceRefresh by dispatching storage event
+    window.dispatchEvent(new Event('jazsam_orders_updated'));
 
     // Award points: 1 point per ₱10 spent
     if (user && addPoints) {
@@ -45,13 +50,14 @@ export function OrdersProvider({ children }) {
     return newOrder;
   }
 
-  // Filter orders for the current user
+  // Filter orders for the current user from the store
+  const allOrders = store.orders;
   const userOrders = user
-    ? orders.filter(o => o.userId === user.id || o.userId === 'guest')
-    : orders;
+    ? allOrders.filter(o => o.userId === user.id || o.userId === 'guest')
+    : allOrders;
 
   return (
-    <OrdersContext.Provider value={{ orders: userOrders, placeOrder }}>
+    <OrdersContext.Provider value={{ orders: userOrders, allOrders, placeOrder }}>
       {children}
     </OrdersContext.Provider>
   );
