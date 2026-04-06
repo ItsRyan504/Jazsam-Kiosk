@@ -300,6 +300,14 @@
   gap: 16px;
 }
 
+.rewards-empty-msg {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--color-muted);
+  font-size: 0.9rem;
+}
+
 .reward-card {
   display: flex;
   align-items: center;

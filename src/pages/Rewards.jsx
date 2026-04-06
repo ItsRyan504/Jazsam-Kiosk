@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useOrders } from '../context/OrdersContext';
+import { useStore } from '../context/StoreContext';
 import './Rewards.css';
 
 /* ─── Tier config ───────────────────────────── */
@@ -11,19 +12,27 @@ const TIERS = [
   { name: 'Gold',   min: 1500, max: 9999, color: '#d4a853', gradient: 'linear-gradient(135deg, #d4a853, #f0c87a)', icon: '🥇' },
 ];
 
-/* ─── Reward catalog ────────────────────────── */
-const REWARDS = [
-  { id: 'r1', name: 'Free Upsize',            desc: 'Upgrade any drink to the next size',          points: 50,  icon: '📏', category: 'Drinks'  },
-  { id: 'r2', name: 'Free Add-on',            desc: 'Add extra toppings at no cost',                points: 75,  icon: '🧋', category: 'Drinks'  },
-  { id: 'r3', name: '₱20 Off Any Drink',      desc: 'Discount on your next beverage order',         points: 100, icon: '☕', category: 'Drinks'  },
-  { id: 'r4', name: 'Free French Fries',      desc: 'A side of crispy fries on the house',          points: 120, icon: '🍟', category: 'Sides'   },
-  { id: 'r5', name: 'Buy 1 Get 1 Coffee',     desc: 'Get a second coffee free with your order',     points: 200, icon: '🎉', category: 'Drinks'  },
-  { id: 'r6', name: '₱50 Off Any Order',      desc: 'Discount applied to your total bill',          points: 250, icon: '💰', category: 'Special' },
-  { id: 'r7', name: 'Free Milktea (Any Size)', desc: 'Enjoy any milktea flavor for free',            points: 300, icon: '🥤', category: 'Drinks'  },
-  { id: 'r8', name: 'Birthday Bonus Double Pts', desc: 'Earn 2x points for a full week',            points: 500, icon: '🎂', category: 'Special' },
-];
-
-const FILTER_CATEGORIES = ['All', 'Drinks', 'Sides', 'Special'];
+/* ─── Reward icon / category helpers ────────── */
+const REWARD_ICON = {
+  'Free Item':                 '🎁',
+  'Discount – Fixed Amount':   '💰',
+  'Discount – Percentage':     '🏷️',
+};
+const REWARD_CATEGORY = {
+  'Free Item':                 'Drinks',
+  'Discount – Fixed Amount':   'Special',
+  'Discount – Percentage':     'Special',
+};
+function mapAdminReward(r) {
+  return {
+    id:       r.id,
+    name:     r.value,
+    desc:     r.name,
+    points:   r.stamps,
+    icon:     REWARD_ICON[r.type] || '⭐',
+    category: REWARD_CATEGORY[r.type] || 'Special',
+  };
+}
 
 /* ─── How-It-Works steps ────────────────────── */
 const HOW_IT_WORKS = [
@@ -57,7 +66,11 @@ function ConfettiOverlay({ onDone }) {
 export default function Rewards() {
   const { user, redeemPoints } = useAuth();
   const { orders }             = useOrders();
+  const { rewards: storeRewards } = useStore();
   const navigate               = useNavigate();
+
+  const REWARDS = storeRewards.map(mapAdminReward);
+  const FILTER_CATEGORIES = ['All', ...new Set(REWARDS.map(r => r.category))];
 
   const [filterCat, setFilterCat] = useState('All');
   const [redeemed,  setRedeemed]  = useState(null);
@@ -246,7 +259,9 @@ export default function Rewards() {
           </div>
 
           <div className="rewards-catalog-grid">
-            {filteredRewards.map(reward => {
+            {filteredRewards.length === 0 ? (
+              <p className="rewards-empty-msg">No rewards available at the moment. Check back soon!</p>
+            ) : filteredRewards.map(reward => {
               const canRedeem = points >= reward.points;
               return (
                 <div
