@@ -68,8 +68,11 @@ export function StoreProvider({ children }) {
       apiFetch('employees.php'),
     ]).then(([prodRes, invRes, rwdRes, empRes]) => {
       let online = false;
-      if (prodRes.status === 'fulfilled' && Array.isArray(prodRes.value)) {
+      if (prodRes.status === 'fulfilled' && Array.isArray(prodRes.value) && prodRes.value.length > 0) {
         setProducts(prodRes.value);
+        online = true;
+      } else if (prodRes.status === 'fulfilled' && Array.isArray(prodRes.value)) {
+        // API reachable but DB is empty — keep defaults visible so the UI isn't blank
         online = true;
       }
       if (invRes.status  === 'fulfilled' && Array.isArray(invRes.value))  setInventory(invRes.value);
@@ -79,11 +82,12 @@ export function StoreProvider({ children }) {
     });
   }, []);
 
-  /* ── Orders: keep synced with OrdersContext via localStorage event ── */
-  const loadOrders = useCallback(() => {
+  /* ── Orders: fetched from API, refreshed on custom event ── */
+  const loadOrders = useCallback(async () => {
     try {
-      const fresh = JSON.parse(localStorage.getItem('jazsam_orders') || '[]');
-      setOrders(fresh);
+      const res   = await fetch(`${API}/orders.php`);
+      const fresh = await res.json();
+      if (Array.isArray(fresh)) setOrders(fresh);
     } catch {}
   }, []);
 
@@ -219,9 +223,14 @@ export function StoreProvider({ children }) {
     } catch {}
   }
 
-  /* ── Order status update (local only — orders managed by OrdersContext) ── */
+  /* ── Order status update — optimistic local + persist to API ── */
   function updateOrderStatus(id, status) {
     setOrders(os => os.map(o => o.id === id ? { ...o, status } : o));
+    fetch(`${API}/orders.php`, {
+      method:  'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ id, status }),
+    }).catch(() => {});
   }
 
   const value = {

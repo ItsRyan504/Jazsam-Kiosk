@@ -61,7 +61,7 @@ export default function Login() {
   const [reg2Err,     setReg2Err]     = useState({});
 
   /* ── Handlers ── */
-  function handleLogin(e) {
+  async function handleLogin(e) {
     e.preventDefault();
     const errs = {};
     if (!loginEmail.trim()) errs.email = 'Email is required';
@@ -69,7 +69,7 @@ export default function Login() {
     if (!loginPw) errs.pw = 'Password is required';
     if (Object.keys(errs).length) { setLoginErr(errs); return; }
 
-    const result = login({ email: loginEmail, password: loginPw });
+    const result = await login({ email: loginEmail, password: loginPw });
     if (!result.success) {
       setLoginErr({ general: result.error });
       return;
@@ -100,7 +100,7 @@ export default function Login() {
     setView('register-step2');
   }
 
-  function handleCreateAccount(e) {
+  async function handleCreateAccount(e) {
     e.preventDefault();
     const errs = {};
     const allPass = PW_RULES.every(r => r.test(password));
@@ -108,7 +108,7 @@ export default function Login() {
     if (password !== confirmPw) errs.confirm = 'Password does not match!';
     if (Object.keys(errs).length) { setReg2Err(errs); return; }
 
-    const result = register({
+    const result = await register({
       firstName: reg1.firstName,
       lastName:  reg1.lastName,
       email:     reg1.email,

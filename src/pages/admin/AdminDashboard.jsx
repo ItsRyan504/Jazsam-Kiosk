@@ -1231,19 +1231,16 @@ function RewardsSection() {
 
   const stampsRequired = maxPoints;
 
-  const allCustomers = (() => {
-    try { return JSON.parse(localStorage.getItem('jazsam_users') || '[]'); }
-    catch { return []; }
-  })();
+  const [dbCustomers, setDbCustomers] = useState([]);
 
-  const [, forceRerender] = useState(0);
+  useEffect(() => {
+    fetch('http://localhost/salespresso-api/customers.php')
+      .then(r => r.json())
+      .then(data => { if (Array.isArray(data)) setDbCustomers(data); })
+      .catch(() => {});
+  }, []);
 
-  const freshCustomers = (() => {
-    try { return JSON.parse(localStorage.getItem('jazsam_users') || '[]'); }
-    catch { return []; }
-  })();
-
-  const cardRows = freshCustomers
+  const cardRows = dbCustomers
     .filter(u => searchCards === '' || u.name.toLowerCase().includes(searchCards.toLowerCase()))
     .map((u, idx) => {
       const stamps = u.points || 0;
@@ -1256,16 +1253,21 @@ function RewardsSection() {
     });
 
   function saveStamps(userId, newStamps) {
+    // Optimistic local update
+    setDbCustomers(cs => cs.map(c => c.id === userId ? { ...c, points: newStamps } : c));
+    // Also update the customer session cache if this is the logged-in user
     try {
-      const users = JSON.parse(localStorage.getItem('jazsam_users') || '[]');
-      const updated = users.map(u => u.id === userId ? { ...u, points: newStamps } : u);
-      localStorage.setItem('jazsam_users', JSON.stringify(updated));
       const session = JSON.parse(localStorage.getItem('jazsam_user') || 'null');
       if (session && session.id === userId) {
         localStorage.setItem('jazsam_user', JSON.stringify({ ...session, points: newStamps }));
       }
     } catch {}
-    forceRerender(n => n + 1);
+    // Persist to DB
+    fetch('http://localhost/salespresso-api/customers.php', {
+      method:  'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ id: userId, points: newStamps }),
+    }).catch(() => {});
   }
 
   function handleAddStampsConfirm() {
@@ -2383,9 +2385,9 @@ function SettingsSection({ onLogout }) {
   const [resetConfirm,    setResetConfirm]    = useState(false);
   const [resetDone,       setResetDone]       = useState(false);
 
-  function handleResetData() {
+  async function handleResetData() {
     try {
-      localStorage.removeItem('jazsam_orders');
+      await fetch('http://localhost/salespresso-api/orders.php?confirm=yes', { method: 'DELETE' });
       window.dispatchEvent(new Event('jazsam_orders_updated'));
     } catch {}
     setResetConfirm(false);

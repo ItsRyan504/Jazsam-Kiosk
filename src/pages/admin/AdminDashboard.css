@@ -930,12 +930,11 @@
   max-width: none;
 }
 
-/* ── Category image tabs ── */
+/* ── Category image tabs — matches menu design ── */
 .prod-cat-tabs {
   display: flex;
   gap: 10px;
-  flex-wrap: nowrap;
-  overflow-x: auto;
+  flex-wrap: wrap;
   padding-bottom: 2px;
 }
 
@@ -943,54 +942,46 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
-  padding: 6px 8px;
-  border-radius: 12px;
-  border: 1.5px solid transparent;
+  gap: 6px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 1.5px solid #e8e3dc;
   background: #fff;
   cursor: pointer;
-  transition: border-color 0.18s ease, background 0.18s ease;
-  min-width: 60px;
-  font-size: 0.72rem;
+  transition: all 0.18s ease;
+  min-width: 68px;
+  font-size: 0.78rem;
   font-weight: 600;
   color: #7a7472;
   font-family: 'Inter', sans-serif;
 }
 
 .prod-cat-tab:hover {
-  border-color: #d4cdc5;
+  border-color: #1a1a1a;
+  color: #1a1a1a;
+  background: #faf8f6;
+  transform: translateY(-2px);
 }
 
 .prod-cat-tab--active {
-  border-color: #1a1a1a !important;
   background: #1a1a1a;
+  border-color: #1a1a1a;
   color: #fff;
 }
 
 .prod-cat-tab__img {
-  width: 42px;
-  height: 42px;
-  border-radius: 10px;
-  background: #f4f1ee;
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
-}
-
-.prod-cat-tab--active .prod-cat-tab__img {
-  background: rgba(255,255,255,0.15);
 }
 
 .prod-cat-tab__img img {
-  width: 28px;
-  height: 28px;
-  object-fit: contain;
-}
-
-/* Active tab inverts the icon (white overlay trick) */
-.prod-cat-tab--active .prod-cat-tab__img img {
-  filter: brightness(0) invert(1);
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 12px;
 }
 
 /* ── List header (heading + search) ── */
@@ -1578,8 +1569,9 @@
 
 @media (max-width: 600px) {
   .prod-cat-tabs { gap: 6px; }
-  .prod-cat-tab  { min-width: 52px; }
-  .prod-cat-tab__img { width: 36px; height: 36px; }
+  .prod-cat-tab  { min-width: 58px; padding: 8px 10px; }
+  .prod-cat-tab__img { width: 40px; height: 40px; }
+  .prod-cat-tab__img img { width: 40px; height: 40px; }
   .pp-panel--open { width: 100vw; }
   .pp-inner { width: 100%; }
   .prod-card { flex-wrap: wrap; }

@@ -36,7 +36,7 @@ function mapAdminReward(r) {
 
 /* ─── How-It-Works steps ────────────────────── */
 const HOW_IT_WORKS = [
-  { step: '01', title: 'Place an Order',  desc: 'Earn 1 point for every ₱10 you spend.' },
+  { step: '01', title: 'Place an Order',  desc: 'Earn 1 point for every item you order.' },
   { step: '02', title: 'Collect Points',  desc: 'Watch your points grow with each visit.' },
   { step: '03', title: 'Redeem Rewards',  desc: 'Trade points for free drinks, discounts & more.' },
 ];
@@ -87,9 +87,9 @@ export default function Rewards() {
     ? REWARDS
     : REWARDS.filter(r => r.category === filterCat);
 
-  function handleRedeem(reward) {
+  async function handleRedeem(reward) {
     if (!user || points < reward.points) return;
-    const success = redeemPoints(reward.points);
+    const success = await redeemPoints(reward.points);
     if (success) {
       setRedeemed(reward);
       setShowConfetti(true);

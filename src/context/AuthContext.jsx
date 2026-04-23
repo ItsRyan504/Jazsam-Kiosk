@@ -2,138 +2,138 @@ import { createContext, useContext, useState } from 'react';
 
 const AuthContext = createContext(null);
 
-/* ── Helper: registered users store in localStorage ── */
-const USERS_KEY = 'jazsam_users';
-const SESSION_KEY = 'jazsam_user';
+const API       = 'http://localhost/salespresso-api';
+const SESSION_KEY = 'jazsam_user'; // lightweight cache for page-refresh only
 
-function getRegisteredUsers() {
-  try { return JSON.parse(localStorage.getItem(USERS_KEY)) || []; }
-  catch { return []; }
+async function apiPost(path, body) {
+  const res = await fetch(`${API}/${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  return res.json();
 }
 
-function saveRegisteredUsers(users) {
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+async function apiPut(path, body) {
+  const res = await fetch(`${API}/${path}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  return res.json();
+}
+
+async function apiGet(path) {
+  const res = await fetch(`${API}/${path}`);
+  return res.json();
 }
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
+    // On first load use cached session; AuthContext re-syncs from DB on demand
     try { return JSON.parse(localStorage.getItem(SESSION_KEY)) || null; }
     catch { return null; }
   });
 
-  /**
-   * Register a new user.
-   * Returns { success: true } or { success: false, error: '...' }
-   */
-  function register({ firstName, lastName, email, phone, password }) {
-    const users = getRegisteredUsers();
-
-    // Check if email already exists
-    if (users.find(u => u.email.toLowerCase() === email.toLowerCase())) {
-      return { success: false, error: 'An account with this email already exists.' };
-    }
-
-    const newUser = {
-      id: `user_${Date.now()}`,
-      name: `${firstName} ${lastName}`.trim(),
-      firstName,
-      lastName,
-      email: email.toLowerCase(),
-      phone: phone || '',
-      password, // In a real app this would be hashed
-      points: 0,
-      tier: 'Bronze',
-      joinedAt: new Date().toISOString(),
-    };
-
-    users.push(newUser);
-    saveRegisteredUsers(users);
-
-    // Auto-login after registration
-    const sessionUser = { ...newUser };
-    delete sessionUser.password;
-    localStorage.setItem(SESSION_KEY, JSON.stringify(sessionUser));
-    setUser(sessionUser);
-
-    return { success: true };
+  function saveSession(userData) {
+    localStorage.setItem(SESSION_KEY, JSON.stringify(userData));
+    setUser(userData);
   }
 
-  /**
-   * Login with email + password.
-   * Returns { success: true } or { success: false, error: '...' }
-   */
-  function login({ email, password }) {
-    const users = getRegisteredUsers();
-    const found = users.find(
-      u => u.email.toLowerCase() === email.toLowerCase()
-    );
-
-    if (!found) {
-      return { success: false, error: 'No account found with this email.' };
-    }
-
-    if (found.password !== password) {
-      return { success: false, error: 'Incorrect password. Please try again.' };
-    }
-
-    const sessionUser = { ...found };
-    delete sessionUser.password;
-    localStorage.setItem(SESSION_KEY, JSON.stringify(sessionUser));
-    setUser(sessionUser);
-    return { success: true };
-  }
-
-  function logout() {
+  function clearSession() {
     localStorage.removeItem(SESSION_KEY);
     setUser(null);
   }
 
-  function updateUser(fields) {
-    const updated = { ...user, ...fields };
-    localStorage.setItem(SESSION_KEY, JSON.stringify(updated));
-    setUser(updated);
-
-    // Also update the registered users store
-    const users = getRegisteredUsers();
-    const idx = users.findIndex(u => u.id === updated.id);
-    if (idx !== -1) {
-      users[idx] = { ...users[idx], ...fields };
-      saveRegisteredUsers(users);
+  /**
+   * Register a new customer via the DB API.
+   * Returns { success: true } or { success: false, error: '...' }
+   */
+  async function register({ firstName, lastName, email, phone, password }) {
+    try {
+      const data = await apiPost('customers.php', {
+        action: 'register',
+        firstName, lastName, email, phone, password,
+      });
+      if (!data.success) return { success: false, error: data.error || 'Registration failed.' };
+      saveSession(data.user);
+      return { success: true };
+    } catch {
+      return { success: false, error: 'Could not reach server. Check your connection.' };
     }
   }
 
   /**
-   * Add reward points to the current user.
+   * Login with email + password via the DB API.
    */
-  function addPoints(pts) {
-    if (!user) return;
-    const newPoints = (user.points || 0) + pts;
-    let newTier = user.tier || 'Bronze';
-    if (newPoints >= 1500) newTier = 'Gold';
-    else if (newPoints >= 500) newTier = 'Silver';
-    else newTier = 'Bronze';
+  async function login({ email, password }) {
+    try {
+      const data = await apiPost('customers.php', { action: 'login', email, password });
+      if (!data.success) return { success: false, error: data.error || 'Login failed.' };
+      saveSession(data.user);
+      return { success: true };
+    } catch {
+      return { success: false, error: 'Could not reach server. Check your connection.' };
+    }
+  }
 
-    updateUser({ points: newPoints, tier: newTier });
+  function logout() {
+    clearSession();
   }
 
   /**
-   * Redeem reward points.
-   * Returns true if successful, false if not enough points.
+   * Update the current user's profile fields in DB + local session cache.
    */
-  function redeemPoints(pts) {
+  async function updateUser(fields) {
+    if (!user) return;
+    const merged = { ...user, ...fields };
+    // Optimistic local update
+    saveSession(merged);
+    try {
+      await apiPut('customers.php', { id: user.id, ...fields });
+    } catch {}
+  }
+
+  /**
+   * Re-sync points/tier from the DB (call after placing orders, redeeming, etc.)
+   */
+  async function syncFromDB() {
+    if (!user) return;
+    try {
+      const fresh = await apiGet(`customers.php?id=${encodeURIComponent(user.id)}`);
+      if (fresh && fresh.id) saveSession(fresh);
+    } catch {}
+  }
+
+  function calcTier(points) {
+    if (points >= 1500) return 'Gold';
+    if (points >= 500)  return 'Silver';
+    return 'Bronze';
+  }
+
+  /**
+   * Add loyalty points and persist to DB.
+   */
+  async function addPoints(pts) {
+    if (!user) return;
+    const newPoints = (user.points || 0) + pts;
+    const newTier   = calcTier(newPoints);
+    await updateUser({ points: newPoints, tier: newTier });
+  }
+
+  /**
+   * Redeem loyalty points. Returns true on success, false if not enough points.
+   */
+  async function redeemPoints(pts) {
     if (!user || (user.points || 0) < pts) return false;
     const newPoints = (user.points || 0) - pts;
-    let newTier = user.tier || 'Bronze';
-    if (newPoints >= 1500) newTier = 'Gold';
-    else if (newPoints >= 500) newTier = 'Silver';
-    else newTier = 'Bronze';
-
-    updateUser({ points: newPoints, tier: newTier });
+    const newTier   = calcTier(newPoints);
+    await updateUser({ points: newPoints, tier: newTier });
     return true;
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, register, updateUser, addPoints, redeemPoints }}>
+    <AuthContext.Provider value={{ user, login, logout, register, updateUser, addPoints, redeemPoints, syncFromDB }}>
       {children}
     </AuthContext.Provider>
   );

@@ -4,42 +4,55 @@ import { useStore } from './StoreContext';
 
 const OrdersContext = createContext(null);
 
+const API = 'http://localhost/salespresso-api';
+
 export function OrdersProvider({ children }) {
   const { user, addPoints } = useAuth();
   const store = useStore();
 
-  function placeOrder(cartItems, note = '') {
-    const now = new Date();
-    const dateStr = now.toLocaleDateString('en-US', {
-      month: 'short', day: 'numeric', year: 'numeric',
-    });
-    const timeStr = now.toLocaleTimeString('en-US', {
-      hour: 'numeric', minute: '2-digit', hour12: true,
-    });
-
+  async function placeOrder(cartItems, note = '') {
     const total = cartItems.reduce((s, i) => s + i.price * i.qty, 0);
+    const items = cartItems.map(i => `${i.qty}x ${i.name}`);
 
-    const newOrder = {
-      id: `#${Math.floor(100000 + Math.random() * 900000)}`,
-      userId: user?.id || 'guest',
-      customer: user?.name || 'Guest',
-      date: `${dateStr} · ${timeStr}`,
-      items: cartItems.map(i => `${i.qty}x ${i.name}`),
+    const payload = {
+      userId:    user?.id    || 'guest',
+      customer:  user?.name  || 'Guest',
+      items,
+      cartItems,
       total,
       note: note || '',
-      status: 'Pending',
-      expiresIn: '15 minutes',
     };
 
-    const currentOrders = JSON.parse(localStorage.getItem('jazsam_orders') || '[]');
-    const updated = [newOrder, ...currentOrders];
-    localStorage.setItem('jazsam_orders', JSON.stringify(updated));
+    let newOrder = null;
+    try {
+      const res = await fetch(`${API}/orders.php`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(payload),
+      });
+      newOrder = await res.json();
+    } catch {
+      // Fallback: build an in-memory order if API is offline
+      const now = new Date();
+      newOrder = {
+        id:        `#${Math.floor(100000 + Math.random() * 900000)}`,
+        userId:    user?.id || 'guest',
+        customer:  user?.name || 'Guest',
+        date:      now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                   + ' · '
+                   + now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
+        items,
+        total,
+        note:      note || '',
+        status:    'Pending',
+        expiresIn: '15 minutes',
+      };
+    }
 
-    // Force a re-render by updating StoreContext directly
-    // The StoreContext reads from localStorage, so forceRefresh by dispatching storage event
+    // Notify StoreContext to reload orders from API
     window.dispatchEvent(new Event('jazsam_orders_updated'));
 
-    // Award points: 1 point per item ordered (based on quantity)
+    // Award 1 point per item ordered
     if (user && addPoints) {
       const pointsEarned = cartItems.reduce((sum, item) => sum + item.qty, 0);
       if (pointsEarned > 0) addPoints(pointsEarned);
@@ -48,8 +61,8 @@ export function OrdersProvider({ children }) {
     return newOrder;
   }
 
-  // Filter orders for the current user from the store
-  const allOrders = store.orders;
+  // Filter orders for the current user (store fetches from API)
+  const allOrders  = store.orders;
   const userOrders = user
     ? allOrders.filter(o => o.userId === user.id)
     : allOrders;

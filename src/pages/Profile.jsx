@@ -73,9 +73,9 @@ export default function Profile() {
     };
   }
 
-  function handleSave(e) {
+  async function handleSave(e) {
     e.preventDefault();
-    updateUser(form);
+    await updateUser(form);
     setSaved(true);
     setEditing(false);
   }
