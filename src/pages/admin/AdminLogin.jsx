@@ -2,12 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './AdminLogin.css';
 
-/* ─── Hardcoded Admin Credentials ─────────────────────────────────
-   In a real app these would be validated server-side via JWT.
-   For this school demo, the admin account is pre-set here.
-   ──────────────────────────────────────────────────────────────── */
-const ADMIN_EMAIL    = 'admin@jazsam.com';
-const ADMIN_PASSWORD = 'Admin@JazSam2024';
+const API_AUTH          = 'http://localhost/salespresso-api/auth.php';
 const ADMIN_SESSION_KEY = 'jazsam_admin';
 
 export function getAdminSession() {
@@ -42,7 +37,7 @@ export default function AdminLogin() {
   const [error,   setError]   = useState('');
   const [loading, setLoading] = useState(false);
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     setError('');
 
@@ -50,26 +45,32 @@ export default function AdminLogin() {
     if (!pw)           { setError('Password is required.'); return; }
 
     setLoading(true);
+    try {
+      const res  = await fetch(API_AUTH, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ email: email.trim().toLowerCase(), password: pw }),
+      });
+      const data = await res.json();
 
-    // Simulate a brief "auth check" delay for polish
-    setTimeout(() => {
-      if (
-        email.toLowerCase() === ADMIN_EMAIL &&
-        pw === ADMIN_PASSWORD
-      ) {
+      if (data.success) {
         const session = {
           role:    'admin',
-          name:    'Admin',
-          email:   ADMIN_EMAIL,
+          name:    data.name  || 'Admin',
+          email:   data.email || email,
           loginAt: new Date().toISOString(),
         };
         localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(session));
         navigate('/admin/dashboard', { replace: true });
       } else {
-        setError('Invalid admin credentials. Please try again.');
+        setError(data.error || 'Invalid admin credentials. Please try again.');
         setLoading(false);
       }
-    }, 700);
+    } catch {
+      /* API unreachable — let user know */
+      setError('Cannot connect to the server. Make sure XAMPP is running.');
+      setLoading(false);
+    }
   }
 
   return (

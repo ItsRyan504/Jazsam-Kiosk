@@ -1429,12 +1429,17 @@
 /* ── Variant row ── */
 .pp-variant-row {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 8px;
   background: #faf8f6;
   border: 1px solid #e8e0d8;
   border-radius: 10px;
   padding: 10px 10px;
+}
+
+/* ── Remove-button column (aligns with controls via flex-end on row) ── */
+.pp-remove-wrap {
+  flex-shrink: 0;
 }
 
 .pp-variant-row--recipe {

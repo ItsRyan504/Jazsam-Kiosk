@@ -17,6 +17,7 @@ import Rewards from './pages/Rewards';
 import Profile from './pages/Profile';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import NotFound from './pages/NotFound';
 import './index.css';
 
 /* Hides Navbar + Footer on /admin routes */
@@ -62,6 +63,9 @@ function App() {
                       </ProtectedAdminRoute>
                     }
                   />
+
+                  {/* 404 — catch all unmatched routes */}
+                  <Route path="*" element={<NotFound />} />
                 </Routes>
               </PageTransition>
             </Layout>

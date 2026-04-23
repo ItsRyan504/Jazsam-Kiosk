@@ -455,9 +455,14 @@ const CATEGORIES = [
   { id: 'Sides',    label: 'Sides',    icon: '/sides-icon.png' },
 ];
 
-const INGREDIENTS_LIST = ['Espresso Shot', 'Milk', 'Coffee Beans', 'Orange Juice', 'Lemon', 'Brown Sugar', 'Cream'];
+/* Ingredients list populated dynamically from inventory; static fallback below */
+const INGREDIENTS_FALLBACK = ['Espresso Shot', 'Milk', 'Coffee Beans', 'Orange Juice', 'Lemon', 'Brown Sugar', 'Cream'];
 const QTY_UNITS = ['10ml', '20ml', '50ml', '100ml', '200ml', '1 shot', '1 scoop', '1 pc', '1 tbsp'];
-const SIZE_OPTIONS = ['4oz', '8oz', '10oz', '12oz', '16oz', '22oz', 'S', 'M', 'L', 'XL', 'XXL'];
+const SIZE_OPTIONS_OZ    = ['8oz', '12oz', '16oz', '22oz'];
+const SIZE_OPTIONS_LABEL = ['Small', 'Medium', 'Large', 'XXL'];
+function getSizeOptions(sizeType) {
+  return sizeType === 'S/M/L' ? SIZE_OPTIONS_LABEL : SIZE_OPTIONS_OZ;
+}
 
 /* Image placeholder */
 function ImgPlaceholder() {
@@ -532,7 +537,7 @@ function ProductCard({ product, onEdit, onDelete }) {
 }
 
 /* ── Add/Edit Product Side Panel ── */
-function ProductPanel({ open, mode, product, onClose, onSave }) {
+function ProductPanel({ open, mode, product, onClose, onSave, ingredientsList = INGREDIENTS_FALLBACK }) {
   const fileInputRef               = useRef(null);
   const [activeTab,    setActiveTab]   = useState('info');
   const [productName,  setProductName] = useState('');
@@ -544,7 +549,7 @@ function ProductPanel({ open, mode, product, onClose, onSave }) {
   const [imageUrl,     setImageUrl]    = useState('');
   const [available,    setAvailable]   = useState(true);
   const [sizeType,     setSizeType]    = useState('Oz');
-  const [variants,     setVariants]    = useState([{ size: '12oz', price: '55.00' }]);
+  const [variants,     setVariants]    = useState([{ size: '12oz', price: '120.00' }]);
   const [ingredients,  setIngredients] = useState([{ ingredient: 'Espresso Shot', qty: '10ml' }]);
 
   /* Price field for non-variant (food) products */
@@ -568,11 +573,20 @@ function ProductPanel({ open, mode, product, onClose, onSave }) {
     setImageUrl('');
     const priceFallback = String((product?.price ?? 0).toFixed(2));
     setBasePrice(priceFallback);
-    setVariants(
-      (product?.sizes || []).length
-        ? (product.sizes).map(s => ({ size: s, price: priceFallback }))
-        : [{ size: '12oz', price: priceFallback }]
-    );
+    const newSizeType = (product?.sizes || []).some(s => SIZE_OPTIONS_LABEL.includes(s)) ? 'S/M/L' : 'Oz';
+    setSizeType(newSizeType);
+    if ((product?.variants || []).length) {
+      /* Restore full variant rows (with variantId + price) from API data */
+      setVariants(product.variants.map(v => ({
+        variantId: v.variantId,
+        size:      v.size || (newSizeType === 'S/M/L' ? 'Small' : '12oz'),
+        price:     String((v.price ?? 0).toFixed(2)),
+      })));
+    } else if ((product?.sizes || []).length) {
+      setVariants(product.sizes.map(s => ({ size: s, price: priceFallback })));
+    } else {
+      setVariants([{ size: newSizeType === 'S/M/L' ? 'Small' : '12oz', price: priceFallback }]);
+    }
     setIngredients([{ ingredient: 'Espresso Shot', qty: '10ml' }]);
   }, [open, product]);
 
@@ -587,12 +601,19 @@ function ProductPanel({ open, mode, product, onClose, onSave }) {
       id:       product?.id || `p${Date.now()}`,
       name:     productName,
       category: isFood ? 'Sides' : bevType,
-      // Food uses basePrice; beverages use first variant price
       price:    parseFloat(isFood ? basePrice : (variants[0]?.price || 0)),
       sizes:    isFood ? [] : variants.map(v => v.size),
       temps:    temperature,
       status:   available ? 'available' : 'unavailable',
       image:    imageTab === 'url' ? imageUrl : imagePreview,
+      /* Pass full variant rows so the API can persist them */
+      variants: isFood
+        ? [{ size: null, price: parseFloat(basePrice) }]
+        : variants.map(v => ({
+            variantId: v.variantId ?? null,
+            size:      v.size,
+            price:     parseFloat(v.price) || 0,
+          })),
     });
     onClose();
   }
@@ -603,7 +624,7 @@ function ProductPanel({ open, mode, product, onClose, onSave }) {
     );
   }
 
-  function addVariant()      { setVariants(v => [...v, { size: '8oz', price: '0.00' }]); }
+  function addVariant()      { setVariants(v => [...v, { size: sizeType === 'S/M/L' ? 'Small' : '8oz', price: '0.00' }]); }
   function removeVariant(i)  { setVariants(v => v.filter((_, idx) => idx !== i)); }
   function updateVariant(i, field, val) {
     setVariants(v => v.map((item, idx) => idx === i ? { ...item, [field]: val } : item));
@@ -756,28 +777,37 @@ function ProductPanel({ open, mode, product, onClose, onSave }) {
             <div className="pp-body">
               <div className="pp-field">
                 <label className="pp-label">Size Type</label>
-                <select className="pp-select" value={sizeType} onChange={e => setSizeType(e.target.value)}>
+                <select
+                  className="pp-select"
+                  value={sizeType}
+                  onChange={e => {
+                    const t = e.target.value;
+                    setSizeType(t);
+                    setVariants([{ size: t === 'S/M/L' ? 'Small' : '12oz', price: '120.00' }]);
+                  }}
+                >
                   <option>Oz</option>
                   <option>S/M/L</option>
-                  <option>XS/S/M/L/XL</option>
-                  <option>Custom</option>
                 </select>
               </div>
 
               <div className="pp-variants-hdr">
-                <label className="pp-label">Sizes in oz</label>
+                <label className="pp-label">Sizes in {sizeType === 'S/M/L' ? 's/m/l' : 'oz'}</label>
                 <button type="button" className="pp-add-link" onClick={addVariant}>+ Add Size</button>
               </div>
 
               {variants.map((v, i) => (
                 <div key={i} className="pp-variant-row">
-                  <select
-                    className="pp-select pp-select--sm"
-                    value={v.size}
-                    onChange={e => updateVariant(i, 'size', e.target.value)}
-                  >
-                    {SIZE_OPTIONS.map(s => <option key={s}>{s}</option>)}
-                  </select>
+                  <div className="pp-price-wrap">
+                    <span className="pp-price-prefix">Size</span>
+                    <select
+                      className="pp-select pp-select--sm"
+                      value={v.size}
+                      onChange={e => updateVariant(i, 'size', e.target.value)}
+                    >
+                      {getSizeOptions(sizeType).map(s => <option key={s}>{s}</option>)}
+                    </select>
+                  </div>
                   <div className="pp-price-wrap">
                     <span className="pp-price-prefix">Price (₱)</span>
                     <input
@@ -788,12 +818,14 @@ function ProductPanel({ open, mode, product, onClose, onSave }) {
                       onChange={e => updateVariant(i, 'price', e.target.value)}
                     />
                   </div>
-                  <button
-                    type="button"
-                    className="pp-remove-btn"
-                    onClick={() => removeVariant(i)}
-                    disabled={variants.length <= 1}
-                  >✕</button>
+                  <div className="pp-remove-wrap">
+                    <button
+                      type="button"
+                      className="pp-remove-btn"
+                      onClick={() => removeVariant(i)}
+                      disabled={variants.length <= 1}
+                    >✕</button>
+                  </div>
                 </div>
               ))}
 
@@ -830,7 +862,7 @@ function ProductPanel({ open, mode, product, onClose, onSave }) {
                       value={ing.ingredient}
                       onChange={e => updateIngredient(i, 'ingredient', e.target.value)}
                     >
-                      {INGREDIENTS_LIST.map(n => <option key={n}>{n}</option>)}
+                      {ingredientsList.map(n => <option key={n}>{n}</option>)}
                     </select>
                   </div>
                   <div className="pp-ing-col">
@@ -867,7 +899,10 @@ function ProductPanel({ open, mode, product, onClose, onSave }) {
 }
 
 function ProductsSection() {
-  const { products, addProduct, updateProduct, deleteProduct } = useStore();
+  const { products, addProduct, updateProduct, deleteProduct, inventory } = useStore();
+  const ingredientsList = inventory.length
+    ? inventory.map(i => i.name)
+    : INGREDIENTS_FALLBACK;
   const [search,      setSearch]      = useState('');
   const [filter,      setFilter]      = useState('All');
   const [panelOpen,   setPanelOpen]   = useState(false);
@@ -954,6 +989,7 @@ function ProductsSection() {
         product={editProduct}
         onClose={() => setPanelOpen(false)}
         onSave={handleSave}
+        ingredientsList={ingredientsList}
       />
     </div>
   );
