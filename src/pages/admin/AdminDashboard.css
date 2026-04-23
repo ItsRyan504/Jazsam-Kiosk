@@ -156,17 +156,17 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  overflow: hidden;
+  /* NOTE: do NOT set overflow here — it would trap position:fixed children (modals) */
 }
 
-/* ── Topbar ── */
+/* ── Topbar (mobile only) ── */
 .adm-topbar {
-  height: 60px;
+  height: 56px;
   background: #ffffff;
   border-bottom: 1px solid #e8e0d8;
-  display: flex;
+  display: none;           /* hidden on desktop — topbar is redundant */
   align-items: center;
-  padding: 0 24px;
+  padding: 0 16px;
   gap: 12px;
   position: sticky;
   top: 0;
@@ -180,13 +180,6 @@
   cursor: pointer;
   color: #1a1a1a;
   padding: 4px;
-}
-
-.adm-topbar-title {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #1a1a1a;
-  flex: 1;
 }
 
 .adm-topbar-right {
@@ -557,6 +550,7 @@
 .adm-action-btn--blue   { background: #3b82f6; color: #fff; }
 .adm-action-btn--red    { background: #ef4444; color: #fff; }
 .adm-action-btn--green  { background: #22c55e; color: #fff; }
+.adm-action-btn--brown  { background: #6b4226; color: #fff; }
 
 /* ── Inventory alerts ── */
 .adm-inv-alerts {
@@ -731,6 +725,15 @@
 }
 
 @media (max-width: 768px) {
+  /* Show topbar on mobile for hamburger */
+  .adm-topbar {
+    display: flex;
+  }
+
+  .adm-hamburger {
+    display: flex;
+  }
+
   .adm-sidebar {
     position: fixed;
     top: 0;
@@ -738,15 +741,14 @@
     height: 100vh;
     transform: translateX(-100%);
     box-shadow: 4px 0 32px rgba(0,0,0,0.12);
+    z-index: 200;        /* above topbar */
   }
   .adm-sidebar.open {
     transform: translateX(0);
   }
   .adm-overlay {
     display: block;
-  }
-  .adm-hamburger {
-    display: flex;
+    z-index: 199;
   }
   .adm-main {
     width: 100%;
@@ -764,6 +766,11 @@
     flex-direction: column;
     align-items: flex-start;
   }
+  /* Home section on mobile */
+  .home-stats-row { flex-direction: column; }
+  .home-stock-alert { width: 100%; }
+  .home-stats-left { grid-template-columns: 1fr 1fr; }
+  .home-charts-row { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 480px) {
@@ -771,19 +778,36 @@
   .adm-filters { flex-direction: column; align-items: stretch; }
   .adm-search { min-width: unset; }
   .adm-filter-tabs { overflow-x: auto; flex-wrap: nowrap; }
+  .home-stats-left { grid-template-columns: 1fr; }
+  .home-header { flex-direction: column; align-items: flex-start; }
+  /* Modal full-width on small screens */
+  .dcm-dialog {
+    padding: 28px 20px 22px;
+  }
 }
 
 /* ==============================================
    DELETE CONFIRM MODAL
    ============================================== */
 
+/*
+  The backdrop must escape any overflow clipping from .adm-main-inner.
+  We use position:fixed with top/left/right/bottom: 0 so it always
+  covers the full VIEWPORT regardless of scroll position.
+  The transform on the viewport itself (none in this layout) is
+  the only thing that could trap it — and we make sure .adm-shell
+  has no transform.
+*/
 .dcm-backdrop {
   position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.50);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
-  z-index: 9999;
+  z-index: 99999;          /* above sidebar (z 100) and topbar (z 50) */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1178,9 +1202,9 @@
 
 /* ── Panel header ── */
 .pp-header {
-  padding: 20px 20px 0;
+  padding: 20px 20px 14px;
   border-bottom: 1px solid #f0ebe4;
-  padding-bottom: 0;
+  flex-shrink: 0;   /* ← never collapse / scroll away */
 }
 
 .pp-title {
@@ -1196,6 +1220,7 @@
   gap: 0;
   padding: 0 20px;
   border-bottom: 1px solid #e8e0d8;
+  flex-shrink: 0;   /* ← stays visible while body scrolls */
 }
 
 .pp-tab {
@@ -1555,6 +1580,148 @@
 }
 
 /* ==============================================
+   INVENTORY RESTOCK INLINE PANEL
+   ============================================== */
+
+.inv-restock-row > td {
+  background: #f8f5f2;
+  border-top: none !important;
+}
+
+.inv-restock-card {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 14px 20px;
+  flex-wrap: wrap;
+  border-left: 3px solid #6b4226;
+  animation: restockSlide 0.2s ease;
+}
+
+@keyframes restockSlide {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.inv-restock-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 160px;
+}
+
+.inv-restock-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.inv-restock-current {
+  font-size: 0.78rem;
+  color: #7a7472;
+}
+
+.inv-restock-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.inv-restock-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6b4226;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.inv-restock-controls {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border: 1.5px solid #d4cdc5;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.inv-restock-step {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: #f4f1ee;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #6b4226;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.inv-restock-step:hover { background: #e8dfd5; }
+
+.inv-restock-input {
+  width: 60px;
+  height: 36px;
+  border: none;
+  border-left: 1.5px solid #e0d9d0;
+  border-right: 1.5px solid #e0d9d0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-align: center;
+  font-family: 'Inter', sans-serif;
+  color: #1a1a1a;
+  outline: none;
+  background: #fff;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.inv-restock-input::-webkit-outer-spin-button,
+.inv-restock-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+.inv-restock-btns {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-left: auto;
+}
+
+.inv-restock-cancel {
+  padding: 8px 16px;
+  border: 1.5px solid #d4cdc5;
+  border-radius: 8px;
+  background: #fff;
+  color: #7a7472;
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.inv-restock-cancel:hover { background: #f4f1ee; border-color: #1a1a1a; color: #1a1a1a; }
+
+.inv-restock-confirm {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border: none;
+  border-radius: 8px;
+  background: #6b4226;
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 700;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.12s, box-shadow 0.15s;
+  box-shadow: 0 2px 8px rgba(107,66,38,0.3);
+}
+.inv-restock-confirm:hover { background: #5a3520; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(107,66,38,0.4); }
+.inv-restock-confirm:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+
+/* ==============================================
    HOME / DASHBOARD SECTION
    ============================================== */
 
@@ -1619,24 +1786,24 @@
 .home-stat-card {
   background: #fff;
   border: 1px solid #e8e0d8;
-  border-radius: 12px;
-  padding: 16px 18px;
+  border-radius: 14px;
+  padding: 20px 20px 16px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   transition: box-shadow 0.18s;
 }
 .home-stat-card:hover { box-shadow: 0 3px 14px rgba(0,0,0,0.07); }
 
 .home-stat-label {
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   font-weight: 600;
   color: #7a7472;
   margin: 0;
 }
 
 .home-stat-value {
-  font-size: 1.9rem;
+  font-size: 2rem;
   font-weight: 800;
   color: #1a1a1a;
   line-height: 1.1;
@@ -1645,29 +1812,35 @@
 
 .home-stat-trend {
   font-size: 0.72rem;
-  color: #22c55e;
+  color: #7a7472;
   margin: 0;
+}
+
+.trend-arrow {
+  color: #22c55e;
+  font-weight: 700;
+  margin-right: 2px;
 }
 
 .home-stat-trend strong { font-weight: 700; }
 
 .home-stock-alert {
-  width: 240px;
+  width: 260px;
   flex-shrink: 0;
 }
 
-/* Charts row */
+/* Charts row — two columns: wide area chart + gauge */
 .home-charts-row {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 3fr 2fr;
   gap: 16px;
-  margin-top: 16px;
 }
 
 .home-chart-card {
   display: flex;
   flex-direction: column;
 }
+
 
 .home-chart-subtitle {
   font-size: 0.72rem;
@@ -1678,16 +1851,44 @@
   margin: 0 0 4px;
 }
 
-.home-chart-svg {
-  width: 100%;
-  height: 70px;
-  display: block;
+/* Gauge (semicircle) card */
+.home-gauge-card {
+  position: relative;
 }
 
-.home-donut-svg {
-  width: 130px;
-  height: 130px;
-  display: block;
+.home-gauge-wrap {
+  position: relative;
+  width: 100%;
+}
+
+/* Center text label for the gauge */
+.home-gauge-label {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  pointer-events: none;
+}
+
+.home-gauge-legend {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  font-size: 0.78rem;
+  color: #7a7472;
+}
+
+.home-gauge-legend span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .home-promo-countdown {
@@ -1697,6 +1898,10 @@
 }
 
 /* Responsive */
+@media (max-width: 1200px) {
+  .home-stats-left { grid-template-columns: repeat(3, 1fr); }
+}
+
 @media (max-width: 1024px) {
   .home-stats-left { grid-template-columns: repeat(2, 1fr); }
   .home-charts-row { grid-template-columns: 1fr 1fr; }

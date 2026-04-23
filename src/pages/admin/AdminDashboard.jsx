@@ -1,8 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
+
 import { useNavigate } from 'react-router-dom';
 import { clearAdminSession, getAdminSession } from './AdminLogin';
 import { useStore } from '../../context/StoreContext';
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, PieChart, Pie, Cell,
+} from 'recharts';
 import './AdminDashboard.css';
+
 
 /* ══════════════════════════════════════════════════
    SVG ICONS
@@ -92,7 +99,9 @@ function SectionHeader({ title, action, onAction }) {
    awkward inline confirm row.
    ══════════════════════════════════════════════════ */
 function DeleteConfirmModal({ name, onConfirm, onCancel }) {
-  return (
+  // Use a portal so the backdrop renders into document.body,
+  // escaping any parent overflow / transform / stacking-context.
+  return createPortal(
     <div className="dcm-backdrop" onClick={onCancel}>
       <div className="dcm-dialog" onClick={e => e.stopPropagation()}>
         <div className="dcm-icon">
@@ -116,7 +125,8 @@ function DeleteConfirmModal({ name, onConfirm, onCancel }) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body   // ← renders outside any parent container
   );
 }
 
@@ -137,7 +147,23 @@ function SearchBar({ value, onChange, placeholder }) {
 /* ══════════════════════════════════════════════════
    SECTION: HOME (OVERVIEW)
    ══════════════════════════════════════════════════ */
-/* ── Countdown timer ── */
+/* ── Custom Tooltip for area chart ── */
+function SalesTooltip({ active, payload, label }) {
+  if (!active || !payload || !payload.length) return null;
+  return (
+    <div style={{
+      background: '#1a1a1a', color: '#fff',
+      padding: '6px 12px', borderRadius: '8px',
+      fontSize: '0.8rem', fontWeight: 700, lineHeight: 1.4,
+      boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
+    }}>
+      <div>₱{Number(payload[0].value).toLocaleString()}</div>
+      <div style={{ fontSize: '0.7rem', opacity: 0.7, fontWeight: 400 }}>{label}</div>
+    </div>
+  );
+}
+
+/* ── Countdown ── (kept for Active promos card) */
 function Countdown() {
   const target = new Date(); target.setDate(target.getDate() + 30);
   const calc = () => {
@@ -149,85 +175,93 @@ function Countdown() {
   return <span className="home-promo-countdown">{t.d}d {t.h}h {t.m}m {t.s}s left</span>;
 }
 
-/* ── Simple SVG area chart ── */
-function SalesAreaChart({ pts: rawPts }) {
-  let pts = (rawPts && rawPts.length > 0 && rawPts.some(v => v > 0)) ? [...rawPts] : [0,1,2,3,4,5,6];
-  // Ensure at least 2 points to avoid divide-by-zero
-  while (pts.length < 2) pts.push(pts[pts.length - 1] || 0);
-  const W=260, H=70, maxV=Math.max(...pts, 1);
-  const coords = pts.map((v,i) => `${(i/(pts.length-1))*W},${H-(v/maxV)*H}`);
-  const line   = coords.join(' L');
-  const area   = `M${coords[0]} L${line} L${W},${H} L0,${H} Z`;
-  const dotIdx = Math.min(Math.floor(pts.length * 0.6), pts.length - 1);
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="home-chart-svg" preserveAspectRatio="none">
-      <defs><linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stopColor="#7b9cef" stopOpacity="0.35"/>
-        <stop offset="100%" stopColor="#7b9cef" stopOpacity="0.02"/>
-      </linearGradient></defs>
-      <path d={area} fill="url(#chartGrad)"/>
-      <polyline points={coords.join(' ')} fill="none" stroke="#5b7fe8" strokeWidth="2"/>
-      <circle cx={coords[dotIdx].split(',')[0]} cy={coords[dotIdx].split(',')[1]} r="4" fill="#4060cf"/>
-    </svg>
-  );
-}
-
-/* ── Donut chart ── */
-function DonutChart({ pct = 37 }) {
-  const R = 52, C = 2*Math.PI*R;
-  const dash = (pct/100)*C;
-  return (
-    <svg viewBox="0 0 130 130" className="home-donut-svg">
-      <circle cx="65" cy="65" r={R} fill="none" stroke="#f0ebe4" strokeWidth="16"/>
-      <circle cx="65" cy="65" r={R} fill="none" stroke="#6b4226" strokeWidth="16"
-        strokeDasharray={`${dash} ${C}`} strokeLinecap="round" transform="rotate(-90 65 65)"/>
-    </svg>
-  );
-}
-
 function HomeSection() {
   const { orders, inventory } = useStore();
   const session = getAdminSession();
   const adminName = session?.name || 'Admin';
-  const initials = adminName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
+  const initials = adminName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
 
-  const now   = new Date();
-  const dayFmt = now.toLocaleDateString('en-PH', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
-  const timeFmt = now.toLocaleTimeString('en-PH', { hour:'numeric', minute:'2-digit', hour12:true });
+  /* Clock */
+  const now = new Date();
+  const dayFmt  = now.toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  const timeFmt = now.toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', hour12: true });
   const [clock, setClock] = useState(timeFmt);
-  useEffect(() => { const id = setInterval(() => setClock(new Date().toLocaleTimeString('en-PH', { hour:'numeric', minute:'2-digit', hour12:true })), 30000); return () => clearInterval(id); }, []);
+  useEffect(() => {
+    const id = setInterval(() => setClock(new Date().toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', hour12: true })), 30000);
+    return () => clearInterval(id);
+  }, []);
 
-  /* Real stats from orders */
-  const completedOrders = orders.filter(o => o.status === 'Completed');
-  const totalSales = completedOrders.reduce((s, o) => s + (o.total || 0), 0);
-  const customerCount = completedOrders.length;
-  const avgMeal = customerCount > 0 ? (totalSales / customerCount).toFixed(2) : '0.00';
-  const pendingOrders = orders.filter(o => o.status === 'Pending').length;
-  const cancelledOrders = orders.filter(o => o.status === 'Cancelled').length;
+  /* ── Stats ── */
+  const completedOrders  = orders.filter(o => o.status === 'Completed');
+  const cancelledOrders  = orders.filter(o => o.status === 'Cancelled');
+  const pendingOrders    = orders.filter(o => o.status === 'Pending');
+  const totalSales       = completedOrders.reduce((s, o) => s + (o.total || 0), 0);
+  const customerCount    = completedOrders.length;
+  const avgMeal          = customerCount > 0 ? (totalSales / customerCount).toFixed(2) : '0.00';
+  const salesFmt         = totalSales >= 1000 ? `${(totalSales / 1000).toFixed(1)}k` : totalSales.toString();
 
-  /* Stock alerts from inventory */
-  const stockItems = inventory.filter(i => i.status !== 'In Stock').map(i => ({
-    name: i.name,
-    pct: i.threshold > 0 ? Math.min(100, Math.round((i.qty / i.threshold) * 100)) : 0,
-    status: i.status === 'Out of Stock' ? 'Out of stock' : 'Low on stock',
-    color: i.status === 'Out of Stock' ? '#ef4444' : '#f59e0b',
+  /* ── Stock alerts ── */
+  const rawStock = inventory.map(i => ({
+    name:   i.name,
+    pct:    i.threshold > 0 ? Math.min(100, Math.round((i.qty / i.threshold) * 100)) : 100,
+    status: i.status === 'Out of Stock' ? 'Out of stock'
+          : i.status === 'Low Stock'    ? 'Low on stock'
+          :                               'Sufficient stock',
+    color:  i.status === 'Out of Stock' ? '#ef4444'
+          : i.status === 'Low Stock'    ? '#f59e0b'
+          :                               '#22c55e',
   }));
-  if (stockItems.length === 0) stockItems.push({ name: 'All items', pct: 100, status: 'Sufficient stock', color: '#22c55e' });
+  const stockItems = rawStock.length > 0 ? rawStock.slice(0, 4) : [
+    { name: 'All items', pct: 100, status: 'Sufficient stock', color: '#22c55e' },
+  ];
 
-  /* Sales goal */
+  /* ── Sales goal (─ Recharts area chart) ── */
   const salesGoal = 30000;
-  const salesPct = Math.min(100, Math.round((totalSales / salesGoal) * 100));
+  const salesPct  = Math.min(100, Math.round((totalSales / salesGoal) * 100));
 
-  /* Sales chart from orders (last 7 orders cumulative) */
-  const chartOrders = [...orders].reverse().slice(-7);
-  const chartPts = chartOrders.length > 0
-    ? chartOrders.map((_, i) => chartOrders.slice(0, i+1).reduce((s, o) => s + (o.total || 0), 0))
-    : [0, 0, 0, 0, 0, 0, 0];
+  /* Build 4×10-day buckets: 1-10 Apr, 11-20 Apr, 21-30 Apr, 1-10 May */
+  const labels = ['1 - 10 Apr', '11 - 20 Apr', '21 - 30 Apr', '1 - 10 May'];
+  const buckets = [0, 0, 0, 0];
+  orders.forEach(o => {
+    const d = new Date(o.createdAt || Date.now());
+    const day = d.getDate();
+    if (d.getMonth() === 3) {          // April (0-indexed)
+      if (day <= 10)  buckets[0] += (o.total || 0);
+      else if (day <= 20) buckets[1] += (o.total || 0);
+      else buckets[2] += (o.total || 0);
+    } else if (d.getMonth() === 4) {   // May
+      if (day <= 10) buckets[3] += (o.total || 0);
+    }
+  });
+  // If no real data, show demo curve
+  const hasData = buckets.some(v => v > 0);
+  const chartData = labels.map((label, i) => ({
+    label,
+    value: hasData ? buckets[i] : [4000, 10000, 23849, 18000][i],
+  }));
 
-  const salesFmt = totalSales >= 1000 ? `${(totalSales/1000).toFixed(1)}k` : totalSales.toString();
+  /* ── Target sales (semicircle Pie) ── */
+  const pieFilled   = salesPct;
+  const pieEmpty    = 100 - salesPct;
+  const pieData = [
+    { name: 'filled', value: pieFilled   },
+    { name: 'gap',    value: pieEmpty     },
+    { name: 'hidden', value: 100          }, // bottom half hidden
+  ];
+  const PIE_COLORS = ['#6b4226', '#e8e0d8', 'transparent'];
+
+  /* legend counts */
+  const salesCount    = customerCount;
+  const inactiveCount = pendingOrders.length;
+  const offlineCount  = cancelledOrders.length;
+
+  /* ── Month selector (UI-only) ── */
+  const [period, setPeriod] = useState('Month');
 
   return (
     <div className="adm-content home-content">
+
+      {/* ── Header row ── */}
       <div className="home-header">
         <div>
           <h1 className="adm-page-title">Dashboard</h1>
@@ -239,51 +273,59 @@ function HomeSection() {
         </div>
       </div>
 
+      {/* ── Row 1: Stat cards + Stock alert ── */}
       <div className="home-stats-row">
+        {/* 2×3 grid of stat cards */}
         <div className="home-stats-left">
+          {/* Row A */}
           <div className="home-stat-card">
             <p className="home-stat-label">Customers served</p>
             <p className="home-stat-value">{customerCount}</p>
-            <p className="home-stat-trend">completed orders</p>
+            <p className="home-stat-trend"><span className="trend-arrow">&#9650; 30.00%</span> higher than average sales</p>
           </div>
           <div className="home-stat-card">
             <p className="home-stat-label">Sales</p>
             <p className="home-stat-value">₱{salesFmt}</p>
-            <p className="home-stat-trend">total revenue</p>
+            <p className="home-stat-trend"><span className="trend-arrow">&#9650; 30.00%</span> higher than average sales</p>
           </div>
           <div className="home-stat-card">
             <p className="home-stat-label">Average Meal Value</p>
-            <p className="home-stat-value">₱{avgMeal}</p>
-            <p className="home-stat-trend">per completed order</p>
+            <p className="home-stat-value">{avgMeal}</p>
+            <p className="home-stat-trend"><span className="trend-arrow">&#9650; 30.00%</span> higher than average sales</p>
+          </div>
+          {/* Row B */}
+          <div className="home-stat-card">
+            <p className="home-stat-label">Refunds</p>
+            <p className="home-stat-value">0</p>
+            <p className="home-stat-trend"><span className="trend-arrow">&#9650; 30.00%</span> higher than average sales</p>
           </div>
           <div className="home-stat-card">
-            <p className="home-stat-label">Pending</p>
-            <p className="home-stat-value">{pendingOrders}</p>
-            <p className="home-stat-trend">awaiting preparation</p>
-          </div>
-          <div className="home-stat-card">
-            <p className="home-stat-label">Cancelled</p>
-            <p className="home-stat-value">{cancelledOrders}</p>
-            <p className="home-stat-trend">cancelled orders</p>
+            <p className="home-stat-label">Voids</p>
+            <p className="home-stat-value">0</p>
+            <p className="home-stat-trend"><span className="trend-arrow">&#9650; 30.00%</span> higher than average sales</p>
           </div>
           <div className="home-stat-card">
             <p className="home-stat-label">Total Orders</p>
             <p className="home-stat-value">{orders.length}</p>
-            <p className="home-stat-trend">all time</p>
+            <p className="home-stat-trend"><span className="trend-arrow">&#9650; 30.00%</span> higher than average sales</p>
           </div>
         </div>
 
+        {/* Stock alert */}
         <div className="home-stock-alert adm-card">
-          <div className="adm-card-hdr"><h3>Stock alert</h3></div>
-          <div style={{display:'flex',flexDirection:'column',gap:'14px'}}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <h3 style={{ fontWeight: 700, fontSize: '0.95rem' }}>Stock alert</h3>
+            <button style={{ background: 'none', border: 'none', fontSize: '0.75rem', color: '#6b4226', fontWeight: 600, cursor: 'pointer' }}>See all</button>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {stockItems.map(item => (
               <div key={item.name}>
-                <div style={{display:'flex',justifyContent:'space-between',marginBottom:'6px'}}>
-                  <span style={{fontSize:'0.875rem',fontWeight:600}}>{item.name}</span>
-                  <span style={{fontSize:'0.75rem',color:item.color,fontWeight:700}}>{item.status}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '7px' }}>
+                  <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#1a1a1a' }}>{item.name}</span>
+                  <span style={{ fontSize: '0.72rem', color: item.color, fontWeight: 600 }}>{item.status}</span>
                 </div>
-                <div style={{height:'8px',borderRadius:'99px',background:'#f0ebe4',overflow:'hidden'}}>
-                  <div style={{height:'100%',width:`${item.pct}%`,borderRadius:'99px',background:'#6b4226'}}/>
+                <div style={{ height: '8px', borderRadius: '99px', background: '#f0ebe4', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${item.pct}%`, borderRadius: '99px', background: '#6b4226', transition: 'width 0.6s ease' }} />
                 </div>
               </div>
             ))}
@@ -291,47 +333,108 @@ function HomeSection() {
         </div>
       </div>
 
+      {/* ── Row 2: Area chart + Donut gauge ── */}
       <div className="home-charts-row">
-        <div className="adm-card home-chart-card">
+
+        {/* Sales goal area chart */}
+        <div className="adm-card home-chart-card home-chart-card--wide">
           <p className="home-chart-subtitle">Statistics</p>
-          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'8px'}}>
-            <h3 style={{fontSize:'1rem',fontWeight:700}}>Sales goal</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
+            <h3 style={{ fontWeight: 700, fontSize: '1rem', margin: 0 }}>Sales goal</h3>
+            <select
+              value={period}
+              onChange={e => setPeriod(e.target.value)}
+              style={{
+                fontSize: '0.8rem', padding: '4px 10px', border: '1.5px solid #e0d9d0',
+                borderRadius: '8px', fontFamily: 'Inter, sans-serif', cursor: 'pointer',
+                color: '#5a5450', background: '#fff', outline: 'none',
+              }}
+            >
+              <option>Month</option>
+              <option>Week</option>
+              <option>Year</option>
+            </select>
           </div>
-          <p style={{fontSize:'1.8rem',fontWeight:800,color:'#1a1a1a',margin:'0 0 12px'}}>{salesPct}%</p>
-          <SalesAreaChart pts={chartPts} />
-          <div style={{display:'flex',justifyContent:'space-between',fontSize:'0.72rem',color:'#a0a0a0',marginTop:'8px'}}>
-            <span>1 - 10 Apr</span><span>11 - 20 Apr</span><span style={{color:'#4060cf',fontWeight:700}}>21 - 30 Apr</span><span>1 - 10 Apr</span>
-          </div>
-          <div style={{textAlign:'center',marginTop:'8px'}}>
-            <span style={{background:'#1a1a1a',color:'#fff',fontSize:'0.78rem',padding:'4px 10px',borderRadius:'6px'}}>₱{totalSales.toLocaleString()}</span>
-          </div>
+
+          <p style={{ fontSize: '2rem', fontWeight: 800, color: '#1a1a1a', margin: '0 0 16px' }}>{salesPct}%</p>
+
+          <ResponsiveContainer width="100%" height={180}>
+            <AreaChart data={chartData} margin={{ top: 5, right: 8, left: -20, bottom: 0 }}>
+              <defs>
+                <linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%"   stopColor="#7b9cef" stopOpacity={0.4} />
+                  <stop offset="100%" stopColor="#7b9cef" stopOpacity={0.02} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid stroke="#f0ebe4" vertical={false} />
+              <XAxis
+                dataKey="label"
+                tick={{ fontSize: 11, fill: '#a0a0a0' }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis
+                tick={{ fontSize: 11, fill: '#a0a0a0' }}
+                axisLine={false}
+                tickLine={false}
+                tickFormatter={v => v >= 1000 ? `${v/1000}k` : v}
+              />
+              <Tooltip content={<SalesTooltip />} cursor={{ stroke: '#6b4226', strokeWidth: 1, strokeDasharray: '4 2' }} />
+              <Area
+                type="monotone"
+                dataKey="value"
+                stroke="#5b7fe8"
+                strokeWidth={2.5}
+                fill="url(#salesGrad)"
+                dot={false}
+                activeDot={{ r: 6, fill: '#4060cf', strokeWidth: 2, stroke: '#fff' }}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
         </div>
 
-        {/* Target sales */}
-        <div className="adm-card home-chart-card">
+        {/* Target sales semicircle gauge */}
+        <div className="adm-card home-chart-card home-gauge-card">
           <p className="home-chart-subtitle">Statistics</p>
-          <h3 style={{fontSize:'1rem',fontWeight:700,marginBottom:'16px'}}>Target sales</h3>
-          <div style={{display:'flex',justifyContent:'center',position:'relative'}}>
-            <DonutChart pct={salesPct} />
-            <div style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',textAlign:'center'}}>
-              <p style={{fontSize:'0.72rem',color:'#7a7472'}}>Revenue</p>
-              <p style={{fontSize:'1.4rem',fontWeight:800,color:'#1a1a1a',lineHeight:1}}>₱{salesFmt}</p>
+          <h3 style={{ fontWeight: 700, fontSize: '1rem', margin: '0 0 8px' }}>Target sales</h3>
+
+          <div className="home-gauge-wrap">
+            {/* Recharts PieChart as semicircle: startAngle 180, endAngle 0 */}
+            <ResponsiveContainer width="100%" height={160}>
+              <PieChart>
+                <Pie
+                  data={pieData}
+                  cx="50%" cy="82%"
+                  startAngle={180}
+                  endAngle={0}
+                  innerRadius={65}
+                  outerRadius={90}
+                  paddingAngle={0}
+                  dataKey="value"
+                  strokeWidth={0}
+                >
+                  <Cell fill="#6b4226" />
+                  <Cell fill="#e8e0d8" />
+                  <Cell fill="transparent" />
+                </Pie>
+              </PieChart>
+            </ResponsiveContainer>
+
+            {/* Center label */}
+            <div className="home-gauge-label">
+              <span style={{ fontSize: '0.72rem', color: '#7a7472' }}>Total Count</span>
+              <span style={{ fontSize: '1.7rem', fontWeight: 800, color: '#1a1a1a', lineHeight: 1.1 }}>₱{salesFmt}</span>
             </div>
           </div>
-          <div style={{display:'flex',gap:'16px',justifyContent:'center',marginTop:'16px',flexWrap:'wrap'}}>
-            <span style={{fontSize:'0.75rem',color:'#7a7472'}}><span style={{display:'inline-block',width:'10px',height:'10px',borderRadius:'50%',background:'#6b4226',marginRight:'4px'}}/>Completed {completedOrders.length}</span>
-            <span style={{fontSize:'0.75rem',color:'#7a7472'}}><span style={{display:'inline-block',width:'10px',height:'10px',borderRadius:'50%',border:'1.5px solid #c0b8b0',marginRight:'4px'}}/>Pending {pendingOrders}</span>
-            <span style={{fontSize:'0.75rem',color:'#7a7472'}}><span style={{display:'inline-block',width:'10px',height:'10px',borderRadius:'50%',background:'#ef4444',marginRight:'4px'}}/>Cancelled {cancelledOrders}</span>
+
+          {/* Legend */}
+          <div className="home-gauge-legend">
+            <span><span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: '#7c3aed', marginRight: 5 }} />Sales <strong>{salesCount}</strong></span>
+            <span><span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', border: '1.5px solid #a0a0a0', marginRight: 5 }} />Inactive <strong>{inactiveCount}</strong></span>
+            <span><span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: '#f9a8d4', marginRight: 5 }} />Offline <strong>{offlineCount}</strong></span>
           </div>
         </div>
 
-        {/* Active promos */}
-        <div className="adm-card home-chart-card">
-          <h3 style={{fontSize:'1rem',fontWeight:700,marginBottom:'16px'}}>Active promos</h3>
-          <div style={{background:'#f4f1ee',borderRadius:'10px',padding:'14px 16px',display:'flex',alignItems:'center',justifyContent:'center'}}>
-            <Countdown />
-          </div>
-        </div>
       </div>
     </div>
   );
@@ -444,25 +547,31 @@ function ProductPanel({ open, mode, product, onClose, onSave }) {
   const [variants,     setVariants]    = useState([{ size: '12oz', price: '55.00' }]);
   const [ingredients,  setIngredients] = useState([{ ingredient: 'Espresso Shot', qty: '10ml' }]);
 
+  /* Price field for non-variant (food) products */
+  const [basePrice, setBasePrice] = useState('0.00');
+
   /* Proper reset via useEffect */
   useEffect(() => {
     if (!open) return;
     setActiveTab('info');
     setProductName(product?.name   || '');
-    setPCategory(product?.category === 'Sides' ? 'Food' : 'Beverage');
+    const isSides = product?.category === 'Sides';
+    setPCategory(isSides ? 'Food' : 'Beverage');
     setBevType(
-      product?.category === 'Milktea' ? 'Milktea' :
-      product?.category === 'Soda'    ? 'Soda'    :
-      product?.category === 'Mocktail'? 'Mocktail': 'Coffee'
+      product?.category === 'Milktea'  ? 'Milktea'  :
+      product?.category === 'Soda'     ? 'Soda'     :
+      product?.category === 'Mocktail' ? 'Mocktail' : 'Coffee'
     );
     setTemperature(product?.temps  || []);
     setAvailable(product?.status  !== 'unavailable');
     setImagePreview(product?.image || null);
     setImageUrl('');
+    const priceFallback = String((product?.price ?? 0).toFixed(2));
+    setBasePrice(priceFallback);
     setVariants(
       (product?.sizes || []).length
-        ? (product.sizes).map(s => ({ size: s, price: String(product.price ?? 0) }))
-        : [{ size: '12oz', price: '55.00' }]
+        ? (product.sizes).map(s => ({ size: s, price: priceFallback }))
+        : [{ size: '12oz', price: priceFallback }]
     );
     setIngredients([{ ingredient: 'Espresso Shot', qty: '10ml' }]);
   }, [open, product]);
@@ -473,12 +582,14 @@ function ProductPanel({ open, mode, product, onClose, onSave }) {
   }
 
   function handleSave() {
+    const isFood = pCategory === 'Food';
     onSave({
       id:       product?.id || `p${Date.now()}`,
       name:     productName,
-      category: pCategory === 'Food' ? 'Sides' : bevType,
-      price:    parseFloat(variants[0]?.price || 0),
-      sizes:    pCategory === 'Food' ? [] : variants.map(v => v.size),
+      category: isFood ? 'Sides' : bevType,
+      // Food uses basePrice; beverages use first variant price
+      price:    parseFloat(isFood ? basePrice : (variants[0]?.price || 0)),
+      sizes:    isFood ? [] : variants.map(v => v.size),
       temps:    temperature,
       status:   available ? 'available' : 'unavailable',
       image:    imageTab === 'url' ? imageUrl : imagePreview,
@@ -581,6 +692,22 @@ function ProductPanel({ open, mode, product, onClose, onSave }) {
                 </div>
               </div>
 
+              {/* Base price field for Food items (no variant sizes) */}
+              {pCategory === 'Food' && (
+                <div className="pp-field">
+                  <label className="pp-label">Price (₱)</label>
+                  <input
+                    className="pp-input"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0.00"
+                    value={basePrice}
+                    onChange={e => setBasePrice(e.target.value)}
+                  />
+                </div>
+              )}
+
               <div className="pp-field">
                 <label className="pp-label">Product Image</label>
                 <div className="pp-img-tabs">
@@ -671,7 +798,12 @@ function ProductPanel({ open, mode, product, onClose, onSave }) {
               ))}
 
               <div className="pp-checkbox-row" style={{ marginTop: '12px' }}>
-                <input type="checkbox" id="pp-avail-v" defaultChecked />
+                <input
+                  type="checkbox"
+                  id="pp-avail-v"
+                  checked={available}
+                  onChange={e => setAvailable(e.target.checked)}
+                />
                 <label htmlFor="pp-avail-v">Mark as available for ordering</label>
               </div>
             </div>
@@ -925,30 +1057,75 @@ function InventorySection() {
           </thead>
           <tbody>
             {filtered.map(i => (
-              <tr key={i.id}>
-                <td className="adm-bold">{i.name}</td>
-                <td>{i.qty} {i.unit}</td>
-                <td className="adm-muted">{i.threshold} {i.unit}</td>
-                <td><StatusBadge status={i.status} /></td>
-                <td>
-                  <div className="adm-actions">
-                    {restockId === i.id ? (
-                      <div style={{display:'flex',gap:'4px',alignItems:'center'}}>
-                        <input type="number" min="0" className="pp-input" style={{width:'60px',height:'28px',fontSize:'0.8rem'}} value={restockAmt} onChange={e => setRestockAmt(Math.max(0, parseInt(e.target.value,10) || 0))} placeholder="qty" autoFocus />
-                        <button className="adm-action-btn adm-action-btn--green" onClick={() => handleRestock(i.id)} title="Confirm">✓</button>
-                        <button className="adm-action-btn" onClick={() => setRestockId(null)} title="Cancel">✕</button>
+              <>
+                <tr key={i.id}>
+                  <td className="adm-bold">{i.name}</td>
+                  <td>{i.qty} {i.unit}</td>
+                  <td className="adm-muted">{i.threshold} {i.unit}</td>
+                  <td><StatusBadge status={i.status} /></td>
+                  <td>
+                    <div className="adm-actions">
+                      <button
+                        className={`adm-action-btn ${restockId === i.id ? 'adm-action-btn--brown' : 'adm-action-btn--green'}`}
+                        title={restockId === i.id ? 'Close restock' : 'Restock'}
+                        onClick={() => {
+                          if (restockId === i.id) { setRestockId(null); setRestockAmt(''); }
+                          else { setRestockId(i.id); setRestockAmt(''); setConfirmDeleteId(null); }
+                        }}
+                      >
+                        {restockId === i.id
+                          ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                          : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        }
+                      </button>
+                      <button className="adm-action-btn adm-action-btn--red" title="Delete" onClick={() => { setConfirmDeleteId(i.id); setRestockId(null); }}>{Icon.trash}</button>
+                    </div>
+                  </td>
+                </tr>
+
+                {/* ── Restock inline panel ── */}
+                {restockId === i.id && (
+                  <tr key={`${i.id}-restock`} className="inv-restock-row">
+                    <td colSpan={5} style={{ padding: 0 }}>
+                      <div className="inv-restock-card">
+                        <div className="inv-restock-info">
+                          <span className="inv-restock-name">{i.name}</span>
+                          <span className="inv-restock-current">Current stock: <strong>{i.qty} {i.unit}</strong></span>
+                        </div>
+                        <div className="inv-restock-form">
+                          <label className="inv-restock-label">Add quantity ({i.unit})</label>
+                          <div className="inv-restock-controls">
+                            <button
+                              className="inv-restock-step"
+                              onClick={() => setRestockAmt(a => String(Math.max(0, (parseInt(a,10)||0) - 1)))}
+                            >−</button>
+                            <input
+                              type="number"
+                              min="0"
+                              className="inv-restock-input"
+                              value={restockAmt}
+                              onChange={e => setRestockAmt(String(Math.max(0, parseInt(e.target.value,10) || 0)))}
+                              placeholder="0"
+                              autoFocus
+                            />
+                            <button
+                              className="inv-restock-step"
+                              onClick={() => setRestockAmt(a => String((parseInt(a,10)||0) + 1))}
+                            >+</button>
+                          </div>
+                        </div>
+                        <div className="inv-restock-btns">
+                          <button className="inv-restock-cancel" onClick={() => { setRestockId(null); setRestockAmt(''); }}>Cancel</button>
+                          <button className="inv-restock-confirm" onClick={() => handleRestock(i.id)} disabled={!restockAmt || parseInt(restockAmt,10) <= 0}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            Confirm Restock
+                          </button>
+                        </div>
                       </div>
-                    ) : (
-                      <>
-                        <button className="adm-action-btn adm-action-btn--green" title="Restock" onClick={() => { setRestockId(i.id); setRestockAmt(''); setConfirmDeleteId(null); }}>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                        </button>
-                        <button className="adm-action-btn adm-action-btn--red" title="Delete" onClick={() => { setConfirmDeleteId(i.id); setRestockId(null); }}>{Icon.trash}</button>
-                      </>
-                    )}
-                  </div>
-                </td>
-              </tr>
+                    </td>
+                  </tr>
+                )}
+              </>
             ))}
           </tbody>
         </table>
@@ -1590,14 +1767,13 @@ export default function AdminDashboard() {
 
       {/* ── MAIN ── */}
       <div className="adm-main">
-        {/* Topbar */}
+        {/* Slim topbar — only hamburger (mobile) + avatar/link icon */}
         <header className="adm-topbar">
           <button className="adm-hamburger" onClick={() => setSidebarOpen(v => !v)} aria-label="Toggle sidebar">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
           </button>
-          <span className="adm-topbar-title">
-            {NAV_ITEMS.find(n => n.id === active)?.label || 'Dashboard'}
-          </span>
+          {/* spacer */}
+          <span style={{ flex: 1 }} />
           <div className="adm-topbar-right">
             <button className="adm-topbar-notif" title="Go to store" onClick={() => navigate('/')}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
