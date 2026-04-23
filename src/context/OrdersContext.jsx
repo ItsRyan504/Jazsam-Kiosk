@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext } from 'react';
 import { useAuth } from './AuthContext';
 import { useStore } from './StoreContext';
 
@@ -31,8 +31,6 @@ export function OrdersProvider({ children }) {
       expiresIn: '15 minutes',
     };
 
-    // Write to StoreContext (which persists in localStorage)
-    store.orders; // read first
     const currentOrders = JSON.parse(localStorage.getItem('jazsam_orders') || '[]');
     const updated = [newOrder, ...currentOrders];
     localStorage.setItem('jazsam_orders', JSON.stringify(updated));
@@ -53,7 +51,7 @@ export function OrdersProvider({ children }) {
   // Filter orders for the current user from the store
   const allOrders = store.orders;
   const userOrders = user
-    ? allOrders.filter(o => o.userId === user.id || o.userId === 'guest')
+    ? allOrders.filter(o => o.userId === user.id)
     : allOrders;
 
   return (

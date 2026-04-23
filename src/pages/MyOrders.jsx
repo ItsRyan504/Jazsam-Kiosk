@@ -2,16 +2,13 @@ import { useState } from 'react';
 import { useOrders } from '../context/OrdersContext';
 import './MyOrders.css';
 
-const TABS = ['All', 'Pending', 'Preparing', 'Ready for Pickup', 'Served', 'Expired'];
-
-const MOCK_ORDERS = [];
+const TABS = ['All', 'Pending', 'Preparing', 'Completed', 'Cancelled'];
 
 const STATUS_CONFIG = {
-  Pending:          { label: 'Pending Payment', color: '#f59e0b' },
-  Preparing:        { label: 'Preparing',        color: '#3b82f6' },
-  'Ready for Pickup': { label: 'Ready for Pickup', color: '#8b5cf6' },
-  Served:           { label: 'Served',           color: '#22c55e' },
-  Expired:          { label: 'Expired',          color: '#ef4444' },
+  Pending:   { label: 'Pending',   color: '#f59e0b' },
+  Preparing: { label: 'Preparing', color: '#3b82f6' },
+  Completed: { label: 'Completed', color: '#22c55e' },
+  Cancelled: { label: 'Cancelled', color: '#ef4444' },
 };
 
 export default function MyOrders() {
@@ -50,7 +47,7 @@ export default function MyOrders() {
             </div>
           ) : (
             filtered.map(order => {
-              const cfg = STATUS_CONFIG[order.status];
+              const cfg = STATUS_CONFIG[order.status] || { label: order.status, color: '#a89f96' };
               return (
                 <div key={order.id} className="order-card">
                   {/* Top row */}

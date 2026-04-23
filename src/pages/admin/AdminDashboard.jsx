@@ -1135,198 +1135,92 @@ function InventorySection() {
 }
 
 /* ══════════════════════════════════════════════════
-   COMPONENT: STAMP CARDS VIEW (used by RewardsSection)
-   ══════════════════════════════════════════════════ */
-function StampCardsView({
-  rows, rewards, stampsRequired,
-  custNames, typeOpts,
-  searchCards, setSearchCards,
-  filterType, setFilterType,
-  filterCust, setFilterCust,
-  onBack,
-}) {
-  const [editId,    setEditId]    = useState(null);   // user id being edited
-  const [editStamps, setEditStamps] = useState('');   // draft stamp value
-  const [, forceRerender]          = useState(0);     // force re-read from localStorage
-
-  function startEdit(u) {
-    setEditId(u.id);
-    setEditStamps(String(u.stamps));
-  }
-
-  function saveStamps(userId) {
-    const newStamps = Math.max(0, parseInt(editStamps, 10) || 0);
-    try {
-      const users = JSON.parse(localStorage.getItem('jazsam_users') || '[]');
-      const updated = users.map(u =>
-        u.id === userId ? { ...u, points: newStamps } : u
-      );
-      localStorage.setItem('jazsam_users', JSON.stringify(updated));
-
-      // Also update active session if this is the logged-in user
-      const session = JSON.parse(localStorage.getItem('jazsam_user') || 'null');
-      if (session && session.id === userId) {
-        localStorage.setItem('jazsam_user', JSON.stringify({ ...session, points: newStamps }));
-      }
-    } catch {}
-    setEditId(null);
-    forceRerender(n => n + 1); // causes a re-read on next render
-  }
-
-  // Re-read customers from localStorage each render (so updates are reflected)
-  const freshCustomers = (() => {
-    try { return JSON.parse(localStorage.getItem('jazsam_users') || '[]'); }
-    catch { return []; }
-  })();
-
-  const freshRows = freshCustomers
-    .filter(u => filterCust === 'All Customers' || u.name === filterCust)
-    .filter(u => searchCards === '' || u.name.toLowerCase().includes(searchCards.toLowerCase()))
-    .map((u, idx) => {
-      const stamps = u.points || 0;
-      const pct    = Math.min(100, Math.round((stamps / stampsRequired) * 100));
-      const earned = stamps >= stampsRequired;
-      const cardNo = String(idx + 100).padStart(5, '0');
-      return { ...u, stamps, pct, earned, cardNo };
-    });
-
-  return (
-    <div className="adm-content">
-      <div className="adm-page-header">
-        <div style={{display:'flex',alignItems:'center',gap:10}}>
-          <button onClick={onBack} style={{background:'none',border:'none',cursor:'pointer',color:'#6b4226',fontWeight:700,fontSize:'1.1rem',padding:0}} title="Back">←</button>
-          <div>
-            <h1 className="adm-page-title">Customer Stamp Cards &amp; Rewards</h1>
-            <p className="adm-page-desc">View and manage customer loyalty stamps.</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div style={{display:'flex',gap:10,flexWrap:'wrap',marginBottom:16,alignItems:'center'}}>
-        <div className="adm-search" style={{flex:'1 1 180px',maxWidth:260}}>
-          {Icon.search}
-          <input type="text" placeholder="Enter Customer Name" value={searchCards} onChange={e => setSearchCards(e.target.value)} />
-        </div>
-        <select className="pp-select" value={filterType} onChange={e => setFilterType(e.target.value)} style={{flex:'0 0 auto',minWidth:160,maxWidth:200}}>
-          {typeOpts.map(t => <option key={t}>{t}</option>)}
-        </select>
-        <select className="pp-select" value={filterCust} onChange={e => setFilterCust(e.target.value)} style={{flex:'0 0 auto',minWidth:140,maxWidth:180}}>
-          {custNames.map(n => <option key={n}>{n}</option>)}
-        </select>
-      </div>
-
-      <div className="adm-card adm-card--flush">
-        <table className="adm-table">
-          <thead>
-            <tr>
-              <th>Customer</th>
-              <th>Card No.</th>
-              <th>Stamps Collected</th>
-              <th>Reward Status</th>
-              <th>Reward Name</th>
-              <th>Stamps Required</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {freshRows.length === 0 && (
-              <tr><td colSpan="7" className="adm-muted" style={{textAlign:'center',padding:'32px'}}>No registered customers yet.</td></tr>
-            )}
-            {freshRows.map(u => (
-              <tr key={u.id}>
-                <td className="adm-bold">{u.name}</td>
-                <td className="adm-mono">{u.cardNo}</td>
-                <td>
-                  {editId === u.id ? (
-                    <div style={{display:'flex',alignItems:'center',gap:6}}>
-                      <input
-                        type="number"
-                        min="0"
-                        className="pp-input"
-                        style={{width:'60px',height:'28px',fontSize:'0.85rem'}}
-                        value={editStamps}
-                        onChange={e => setEditStamps(Math.max(0, parseInt(e.target.value,10)||0))}
-                        autoFocus
-                      />
-                      <span style={{fontSize:'0.8rem',color:'#888'}}>/ {stampsRequired}</span>
-                    </div>
-                  ) : (
-                    <div style={{display:'flex',alignItems:'center',gap:8}}>
-                      <span style={{minWidth:18,fontWeight:700,fontSize:'0.9rem'}}>{u.stamps}</span>
-                      <div style={{flex:1,height:10,borderRadius:99,background:'#f0ebe4',overflow:'hidden',minWidth:100}}>
-                        <div style={{height:'100%',width:`${u.pct}%`,borderRadius:99,background: u.earned ? '#22c55e' : u.pct >= 50 ? '#f59e0b' : '#d4c5f0',transition:'width 0.4s'}} />
-                      </div>
-                    </div>
-                  )}
-                </td>
-                <td>
-                  {u.earned
-                    ? <span style={{color:'#22c55e',fontWeight:700,fontSize:'0.82rem'}}>✓ Reward Earned</span>
-                    : <span className="adm-muted">–</span>}
-                </td>
-                <td className="adm-muted">{u.earned && rewards.length > 0 ? rewards[0].name : '–'}</td>
-                <td>{stampsRequired}</td>
-                <td>
-                  {editId === u.id ? (
-                    <div style={{display:'flex',gap:6}}>
-                      <button
-                        onClick={() => saveStamps(u.id)}
-                        style={{fontSize:'0.78rem',padding:'6px 12px',background:'#22c55e',color:'#fff',border:'none',borderRadius:8,cursor:'pointer',fontWeight:600}}
-                      >
-                        Save
-                      </button>
-                      <button
-                        onClick={() => setEditId(null)}
-                        style={{fontSize:'0.78rem',padding:'6px 10px',background:'#f0ebe4',color:'#333',border:'none',borderRadius:8,cursor:'pointer'}}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => startEdit(u)}
-                      style={{fontSize:'0.78rem',padding:'6px 12px',background:'#5b4fcf',color:'#fff',border:'none',borderRadius:8,cursor:'pointer',display:'flex',alignItems:'center',gap:6,whiteSpace:'nowrap'}}
-                      title="Update stamp count"
-                    >
-                      {Icon.edit} Update Status
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-/* ══════════════════════════════════════════════════
-   SECTION: REWARDS
+   SECTION: REWARDS  (with two tabs + right panel)
    ══════════════════════════════════════════════════ */
 function RewardsSection() {
   const { rewards, addReward, deleteReward } = useStore();
+  const [activeTab,   setActiveTab]   = useState('available');
   const [confirmId,   setConfirmId]   = useState(null);
   const [showAdd,     setShowAdd]     = useState(false);
-  const [showCards,   setShowCards]   = useState(false);
   const [searchCards, setSearchCards] = useState('');
-  const [filterType,  setFilterType]  = useState('All Reward Types');
-  const [filterCust,  setFilterCust]  = useState('All Customers');
 
-  /* New reward form state */
+  /* right-panel state */
+  const [rightPanel,   setRightPanel]   = useState(null); // 'addStamps' | 'updateStep1' | 'updateStep2'
+  const [panelRow,     setPanelRow]     = useState(null); // current card row
+  const [addStampsAmt, setAddStampsAmt] = useState('');
+  const [updateForm,   setUpdateForm]   = useState({ custName: '', custType: 'With Registered Jazsam Account', custId: '', cardNo: '' });
+
+  /* New reward form */
   const [form, setForm] = useState({ name: '', type: 'Discount – Fixed Amount', value: '', stamps: 10 });
   const TYPES = ['Discount – Fixed Amount', 'Discount – Percentage', 'Free Item'];
+  const CUST_TYPES = ['With Registered Jazsam Account', 'Walk-in / No Jazsam Account'];
 
-  /* Read registered customers for stamp cards view */
+  const stampsRequired = rewards.length > 0 ? rewards[0].stamps : 10;
+
   const allCustomers = (() => {
     try { return JSON.parse(localStorage.getItem('jazsam_users') || '[]'); }
     catch { return []; }
   })();
 
-  function handleDelete(id) {
-    deleteReward(id);
-    setConfirmId(null);
+  const [, forceRerender] = useState(0);
+
+  const freshCustomers = (() => {
+    try { return JSON.parse(localStorage.getItem('jazsam_users') || '[]'); }
+    catch { return []; }
+  })();
+
+  const cardRows = freshCustomers
+    .filter(u => searchCards === '' || u.name.toLowerCase().includes(searchCards.toLowerCase()))
+    .map((u, idx) => {
+      const stamps = u.points || 0;
+      const pct    = Math.min(100, Math.round((stamps / stampsRequired) * 100));
+      const earned = stamps >= stampsRequired;
+      const rewardable = stamps >= stampsRequired;
+      const allRedeemed = stamps >= stampsRequired * rewards.length;
+      const cardNo = `Card# ${String(1000 + idx + 1 + 22).replace(/^[0-9]{5,}/,'').slice(-4) || String(idx + 1023)}`;
+      return { ...u, stamps, pct, earned, rewardable, allRedeemed, cardNo };
+    });
+
+  function saveStamps(userId, newStamps) {
+    try {
+      const users = JSON.parse(localStorage.getItem('jazsam_users') || '[]');
+      const updated = users.map(u => u.id === userId ? { ...u, points: newStamps } : u);
+      localStorage.setItem('jazsam_users', JSON.stringify(updated));
+      const session = JSON.parse(localStorage.getItem('jazsam_user') || 'null');
+      if (session && session.id === userId) {
+        localStorage.setItem('jazsam_user', JSON.stringify({ ...session, points: newStamps }));
+      }
+    } catch {}
+    forceRerender(n => n + 1);
+  }
+
+  function handleAddStampsConfirm() {
+    if (!panelRow) return;
+    const toAdd = Math.max(0, parseInt(addStampsAmt, 10) || 0);
+    saveStamps(panelRow.id, panelRow.stamps + toAdd);
+    closePanel();
+  }
+
+  function handleResetStamps(row) {
+    saveStamps(row.id, 0);
+    forceRerender(n => n + 1);
+  }
+
+  function openAddStamps(row) {
+    setPanelRow(row);
+    setAddStampsAmt('');
+    setRightPanel('addStamps');
+  }
+
+  function openUpdate(row) {
+    setPanelRow(row);
+    setUpdateForm({ custName: row.name || '', custType: 'With Registered Jazsam Account', custId: '', cardNo: '' });
+    setRightPanel('updateStep1');
+  }
+
+  function closePanel() {
+    setRightPanel(null);
+    setPanelRow(null);
   }
 
   function handleAddReward() {
@@ -1336,116 +1230,321 @@ function RewardsSection() {
     setShowAdd(false);
   }
 
-  /* ── Customer Stamp Card detail view ── */
-  if (showCards) {
-    const stampsRequired = rewards.length > 0 ? rewards[0].stamps : 10;
-    const custNames = ['All Customers', ...allCustomers.map(u => u.name)];
-    const typeOpts  = ['All Reward Types', ...rewards.map(r => r.name)];
-
-    const rows = allCustomers
-      .filter(u => filterCust === 'All Customers' || u.name === filterCust)
-      .filter(u => searchCards === '' || u.name.toLowerCase().includes(searchCards.toLowerCase()))
-      .map((u, idx) => {
-        const stamps = u.points || 0;
-        const pct    = Math.min(100, Math.round((stamps / stampsRequired) * 100));
-        const earned = stamps >= stampsRequired;
-        const cardNo = String(idx + 100).padStart(5, '0');
-        return { ...u, stamps, pct, earned, cardNo };
-      });
-
-    return (
-      <StampCardsView
-        rows={rows}
-        rewards={rewards}
-        stampsRequired={stampsRequired}
-        custNames={custNames}
-        typeOpts={typeOpts}
-        searchCards={searchCards} setSearchCards={setSearchCards}
-        filterType={filterType} setFilterType={setFilterType}
-        filterCust={filterCust} setFilterCust={setFilterCust}
-        onBack={() => setShowCards(false)}
-      />
-    );
+  function rewardStatus(row) {
+    if (row.allRedeemed) return { label: 'All Rewards Redeemed', color: '#22c55e' };
+    if (row.rewardable)  return { label: '1 Reward/s Redeemable', color: '#22c55e' };
+    return { label: 'Collecting', color: '#7a7068' };
   }
 
-  /* ── Main Rewards view ── */
+  const totalRewards = cardRows.length * rewards.length;
+
   return (
-    <div className="adm-content">
+    <div className="adm-content" style={{ position: 'relative' }}>
       {/* Delete confirm modal */}
       {confirmId && (() => {
         const r = rewards.find(x => x.id === confirmId);
         return r ? (
           <DeleteConfirmModal
             name={r.name}
-            onConfirm={() => handleDelete(confirmId)}
+            onConfirm={() => { deleteReward(confirmId); setConfirmId(null); }}
             onCancel={() => setConfirmId(null)}
           />
         ) : null;
       })()}
 
-      <div className="adm-page-header">
-        <div>
-          <h1 className="adm-page-title">Stamp Rewards</h1>
-          <p className="adm-page-desc">Configure loyalty rewards and stamp programs.</p>
+      {/* ── Header ── */}
+      <div className="rwd-header">
+        <h1 className="adm-page-title">All rewards</h1>
+        <div className="rwd-header__right">
+          <div className="adm-search">
+            {Icon.search}
+            <input
+              type="text"
+              placeholder="Search reward"
+              value={searchCards}
+              onChange={e => setSearchCards(e.target.value)}
+            />
+          </div>
+          <button className="emp-btn-add" onClick={() => setShowAdd(v => !v)} title="Add reward">{Icon.plus}</button>
+          <button className="emp-btn-sort" title="Filter">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg>
+          </button>
         </div>
-        <button className="adm-btn-add" onClick={() => setShowAdd(v => !v)}>{Icon.plus} Add a reward</button>
       </div>
 
-      {/* Add Reward Form */}
+      {/* ── Add Reward inline form ── */}
       {showAdd && (
-        <div className="adm-card" style={{marginBottom:16}}>
+        <div className="adm-card" style={{ marginBottom: 16 }}>
           <div className="adm-card-hdr"><h3>New Reward</h3></div>
-          <div style={{display:'flex',gap:12,flexWrap:'wrap',alignItems:'flex-end',padding:'0 0 8px'}}>
-            <div><label style={{fontSize:'0.78rem',fontWeight:600,display:'block',marginBottom:4}}>Name</label>
-              <input className="pp-input" value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g. Reward 5" style={{width:'140px'}} /></div>
-            <div><label style={{fontSize:'0.78rem',fontWeight:600,display:'block',marginBottom:4}}>Type</label>
-              <select className="pp-select" value={form.type} onChange={e => setForm({...form, type: e.target.value})} style={{width:'200px'}}>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end', padding: '0 0 8px' }}>
+            <div><label style={{ fontSize: '0.78rem', fontWeight: 600, display: 'block', marginBottom: 4 }}>Name</label>
+              <input className="pp-input" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. Reward 5" style={{ width: '140px' }} /></div>
+            <div><label style={{ fontSize: '0.78rem', fontWeight: 600, display: 'block', marginBottom: 4 }}>Type</label>
+              <select className="pp-select" value={form.type} onChange={e => setForm({ ...form, type: e.target.value })} style={{ width: '200px' }}>
                 {TYPES.map(t => <option key={t}>{t}</option>)}
               </select></div>
-            <div><label style={{fontSize:'0.78rem',fontWeight:600,display:'block',marginBottom:4}}>Value</label>
-              <input className="pp-input" value={form.value} onChange={e => setForm({...form, value: e.target.value})} placeholder="e.g. ₱20.00 Off" style={{width:'150px'}} /></div>
-            <div><label style={{fontSize:'0.78rem',fontWeight:600,display:'block',marginBottom:4}}>Stamps Needed</label>
-              <input className="pp-input" type="number" min="1" value={form.stamps} onChange={e => setForm({...form, stamps: Math.max(1, parseInt(e.target.value,10)||1)})} style={{width:'80px'}} /></div>
-            <button className="pp-submit" style={{height:'36px'}} onClick={handleAddReward}>Add</button>
-            <button className="pp-cancel" style={{height:'36px'}} onClick={() => setShowAdd(false)}>Cancel</button>
+            <div><label style={{ fontSize: '0.78rem', fontWeight: 600, display: 'block', marginBottom: 4 }}>Value</label>
+              <input className="pp-input" value={form.value} onChange={e => setForm({ ...form, value: e.target.value })} placeholder="e.g. ₱20.00 Off" style={{ width: '150px' }} /></div>
+            <div><label style={{ fontSize: '0.78rem', fontWeight: 600, display: 'block', marginBottom: 4 }}>Stamps Needed</label>
+              <input className="pp-input" type="number" min="1" value={form.stamps} onChange={e => setForm({ ...form, stamps: Math.max(1, parseInt(e.target.value, 10) || 1) })} style={{ width: '80px' }} /></div>
+            <button className="pp-submit" style={{ height: '36px' }} onClick={handleAddReward}>Add</button>
+            <button className="pp-cancel" style={{ height: '36px' }} onClick={() => setShowAdd(false)}>Cancel</button>
           </div>
         </div>
       )}
 
-      {/* Clickable Banner */}
-      <button
-        className="adm-rewards-banner"
-        style={{width:'100%',textAlign:'left',border:'none',cursor:'pointer'}}
-        onClick={() => setShowCards(true)}
-      >
-        <div className="adm-rewards-banner__text">
-          <span>Customer Stamp Cards &amp; Rewards</span>
-          <p>Manage all customer stamp cards and applied rewards.</p>
-        </div>
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-      </button>
+      {/* ── Tab bar ── */}
+      <div className="adm-orders-tabs">
+        <button
+          className={`adm-orders-tab${activeTab === 'available' ? ' active' : ''}`}
+          onClick={() => setActiveTab('available')}
+        >
+          Available Rewards
+        </button>
+        <button
+          className={`adm-orders-tab${activeTab === 'cards' ? ' active' : ''}`}
+          onClick={() => setActiveTab('cards')}
+        >
+          Customer Stamp Cards
+        </button>
+      </div>
+      <div className="adm-orders-tab-line" />
 
-      <div className="adm-count-pills" style={{ marginTop: '0' }}>
-        <span className="adm-pill">{rewards.length} rewards</span>
-      </div>
-      <div className="adm-card adm-card--flush">
-        <table className="adm-table">
-          <thead><tr><th>Reward Name / Type</th><th>Value</th><th>Stamps Required</th><th>Actions</th></tr></thead>
-          <tbody>
-            {rewards.length === 0 && <tr><td colSpan="4" className="adm-muted" style={{textAlign:'center',padding:'24px'}}>No rewards yet. Add one above.</td></tr>}
-            {rewards.map(r => (
-              <tr key={r.id}>
-                <td><strong>{r.name}</strong><div className="adm-muted" style={{fontSize:'0.78rem',marginTop:2}}>{r.type}</div></td>
-                <td className="adm-bold">{r.value}</td>
-                <td>{r.stamps}</td>
-                <td><div className="adm-actions">
-                  <button className="adm-action-btn adm-action-btn--red" onClick={() => setConfirmId(r.id)}>{Icon.trash}</button>
-                </div></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {/* ── Available Rewards tab ── */}
+      {activeTab === 'available' && (
+        <>
+          <div className="adm-count-pills">
+            <span className="adm-pill">{rewards.length} rewards</span>
+          </div>
+          <div className="adm-card adm-card--flush">
+            <table className="adm-table">
+              <thead><tr><th>Reward Name / Type</th><th>Value</th><th>Stamps Required</th><th>Actions</th></tr></thead>
+              <tbody>
+                {rewards.length === 0 && <tr><td colSpan="4" className="adm-muted" style={{ textAlign: 'center', padding: '24px' }}>No rewards yet. Click + to add one.</td></tr>}
+                {rewards.map(r => (
+                  <tr key={r.id}>
+                    <td><strong>{r.name}</strong><div className="adm-muted" style={{ fontSize: '0.78rem', marginTop: 2 }}>{r.type}</div></td>
+                    <td className="adm-bold">{r.value}</td>
+                    <td>{r.stamps}</td>
+                    <td><div className="adm-actions">
+                      <button className="adm-action-btn adm-action-btn--red" onClick={() => setConfirmId(r.id)}>{Icon.trash}</button>
+                    </div></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
+      {/* ── Customer Stamp Cards tab ── */}
+      {activeTab === 'cards' && (
+        <div className="rwd-cards-layout">
+          <div className="rwd-cards-main">
+            <div className="rwd-cards-meta">
+              <span className="adm-muted" style={{ fontSize: '0.82rem' }}>{totalRewards} rewards available</span>
+            </div>
+            <div className="adm-card adm-card--flush">
+              <table className="adm-table">
+                <thead>
+                  <tr>
+                    <th>Customer</th>
+                    <th>Card #</th>
+                    <th>Stamps Collected</th>
+                    <th>Reward Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {cardRows.length === 0 && (
+                    <tr><td colSpan="5" className="adm-muted" style={{ textAlign: 'center', padding: '32px' }}>No registered customers yet.</td></tr>
+                  )}
+                  {cardRows.map(row => {
+                    const rs = rewardStatus(row);
+                    return (
+                      <tr key={row.id}>
+                        <td className="adm-bold">{row.name}</td>
+                        <td className="adm-muted">{row.cardNo}</td>
+                        <td>
+                          <div className="rwd-stamp-cell">
+                            <span className="rwd-stamp-count">{row.stamps}</span>
+                            <div className="rwd-progress-bar">
+                              <div
+                                className="rwd-progress-fill"
+                                style={{
+                                  width: `${row.pct}%`,
+                                  background: row.allRedeemed ? '#22c55e' : row.pct >= 50 ? '#f59e0b' : '#d4c5f0',
+                                }}
+                              />
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <span style={{ color: rs.color, fontWeight: 700, fontSize: '0.82rem' }}>{rs.label}</span>
+                        </td>
+                        <td>
+                          <div className="rwd-action-btns">
+                            <button className="rwd-btn rwd-btn--stamp" onClick={() => openAddStamps(row)}>
+                              + Stamp
+                            </button>
+                            <button className="rwd-btn rwd-btn--update" onClick={() => openUpdate(row)}>
+                              {Icon.edit} Update
+                            </button>
+                            <button className="rwd-btn rwd-btn--reset" onClick={() => handleResetStamps(row)}>
+                              Reset
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* ── Right panel ── */}
+          {rightPanel && (
+            <div className="rwd-right-panel">
+              {/* Add Stamps panel */}
+              {rightPanel === 'addStamps' && panelRow && (
+                <>
+                  <h3 className="rwd-panel-title">Add Stamps</h3>
+                  <div className="rwd-panel-divider" />
+                  <div className="rwd-panel-info-row">
+                    <span className="rwd-panel-label">Customer :</span>
+                    <span className="rwd-panel-value">{panelRow.name}</span>
+                  </div>
+                  <div className="rwd-panel-info-row">
+                    <span className="rwd-panel-label">Card # :</span>
+                    <span className="rwd-panel-value">{panelRow.cardNo}</span>
+                  </div>
+                  <div className="rwd-stamp-counter-box">
+                    <div className="rwd-stamp-counter-num">
+                      {panelRow.stamps} / {stampsRequired}
+                    </div>
+                    <div className="rwd-stamp-counter-sub">
+                      stamps collected &nbsp;•&nbsp; {Math.max(0, stampsRequired - panelRow.stamps)} remaining to full card
+                    </div>
+                  </div>
+                  <label className="rwd-panel-field-label">Number of Stamps to Add</label>
+                  <div className="rwd-panel-input-row">
+                    <input
+                      type="number"
+                      min="1"
+                      className="rwd-panel-input"
+                      value={addStampsAmt}
+                      onChange={e => setAddStampsAmt(e.target.value)}
+                      placeholder="0"
+                      autoFocus
+                    />
+                    <span className="rwd-panel-input-suffix">stamps</span>
+                  </div>
+                  <div className="rwd-panel-footer">
+                    <button className="rwd-panel-btn rwd-panel-btn--delete" onClick={closePanel} title="Cancel">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                    </button>
+                    <button className="rwd-panel-btn rwd-panel-btn--back" onClick={closePanel} title="Back">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+                    </button>
+                    <button className="rwd-panel-btn rwd-panel-btn--confirm" onClick={handleAddStampsConfirm} title="Confirm">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {/* Update step 1 — Reward details */}
+              {rightPanel === 'updateStep1' && (
+                <>
+                  <h3 className="rwd-panel-title">Reward details</h3>
+                  <div className="rwd-panel-divider" />
+                  <div className="rwd-panel-form">
+                    <label className="rwd-panel-field-label">Customer Name</label>
+                    <input
+                      className="rwd-panel-input rwd-panel-input--full"
+                      value={updateForm.custName}
+                      onChange={e => setUpdateForm({ ...updateForm, custName: e.target.value })}
+                    />
+                    <label className="rwd-panel-field-label" style={{ marginTop: 16 }}>Customer type</label>
+                    <select
+                      className="rwd-panel-select"
+                      value={updateForm.custType}
+                      onChange={e => setUpdateForm({ ...updateForm, custType: e.target.value })}
+                    >
+                      {CUST_TYPES.map(t => <option key={t}>{t}</option>)}
+                    </select>
+                  </div>
+                  <div className="rwd-panel-footer">
+                    <button className="rwd-panel-btn rwd-panel-btn--delete" onClick={closePanel} title="Cancel">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                    </button>
+                    <button className="rwd-panel-btn rwd-panel-btn--back" onClick={closePanel} title="Back">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+                    </button>
+                    <button className="rwd-panel-btn rwd-panel-btn--confirm" onClick={() => setRightPanel('updateStep2')} title="Next">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {/* Update step 2 — Customer card details */}
+              {rightPanel === 'updateStep2' && (
+                <>
+                  <h3 className="rwd-panel-title">Customer card details</h3>
+                  <div className="rwd-panel-divider" />
+                  <div className="rwd-panel-form">
+                    <label className="rwd-panel-field-label">Customer Name</label>
+                    <input
+                      className="rwd-panel-input rwd-panel-input--full"
+                      value={updateForm.custName}
+                      onChange={e => setUpdateForm({ ...updateForm, custName: e.target.value })}
+                    />
+                    <label className="rwd-panel-field-label" style={{ marginTop: 16 }}>Customer type</label>
+                    <select
+                      className="rwd-panel-select"
+                      value={updateForm.custType}
+                      onChange={e => setUpdateForm({ ...updateForm, custType: e.target.value })}
+                    >
+                      {CUST_TYPES.map(t => <option key={t}>{t}</option>)}
+                    </select>
+                    {updateForm.custType === 'With Registered Jazsam Account' && (
+                      <>
+                        <label className="rwd-panel-field-label" style={{ marginTop: 16 }}>Enter Customer ID</label>
+                        <input
+                          className="rwd-panel-input rwd-panel-input--full"
+                          value={updateForm.custId}
+                          onChange={e => setUpdateForm({ ...updateForm, custId: e.target.value })}
+                          placeholder="e.g. 10012"
+                        />
+                      </>
+                    )}
+                    <label className="rwd-panel-field-label" style={{ marginTop: 16 }}>Enter Stamp Card No.</label>
+                    <input
+                      className="rwd-panel-input rwd-panel-input--full"
+                      value={updateForm.cardNo}
+                      onChange={e => setUpdateForm({ ...updateForm, cardNo: e.target.value })}
+                      placeholder="e.g. 1025"
+                    />
+                  </div>
+                  <div className="rwd-panel-footer">
+                    <button className="rwd-panel-btn rwd-panel-btn--delete" onClick={closePanel} title="Cancel">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                    </button>
+                    <button className="rwd-panel-btn rwd-panel-btn--back" onClick={() => setRightPanel('updateStep1')} title="Back">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+                    </button>
+                    <button className="rwd-panel-btn rwd-panel-btn--confirm" onClick={closePanel} title="Save">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -1455,14 +1554,12 @@ function RewardsSection() {
    ══════════════════════════════════════════════════ */
 function OrdersSection() {
   const { orders, updateOrderStatus } = useStore();
-  const [search,  setSearch]  = useState('');
-  const [filter,  setFilter]  = useState('All');
+  const [activeTab, setActiveTab] = useState('incoming');
+  const [search, setSearch] = useState('');
   const [confirmCancelId, setConfirmCancelId] = useState(null);
-  const statuses = ['All', 'Pending', 'Preparing', 'Completed', 'Cancelled'];
-  const filtered = orders.filter(o =>
-    (filter === 'All' || o.status === filter) &&
-    ((o.id || '').includes(search) || (o.customer || o.userId || '').toLowerCase().includes(search.toLowerCase()))
-  );
+
+  const adminSession = JSON.parse(localStorage.getItem('jazsam_admin') || '{}');
+  const adminName = adminSession.name || 'Admin';
 
   function cycleStatus(order) {
     const flow = { 'Pending': 'Preparing', 'Preparing': 'Completed' };
@@ -1474,66 +1571,341 @@ function OrdersSection() {
     setConfirmCancelId(null);
   }
 
+  const incomingOrders = orders.filter(o => o.status === 'Pending' || o.status === 'Preparing');
+
+  const historyOrders = orders.filter(o =>
+    (o.status === 'Completed' || o.status === 'Cancelled') &&
+    ((o.id || '').toLowerCase().includes(search.toLowerCase()) ||
+     (o.customer || o.userId || '').toLowerCase().includes(search.toLowerCase()))
+  );
+
   return (
     <div className="adm-content">
       <div className="adm-page-header">
         <div>
           <h1 className="adm-page-title">Orders</h1>
-          <p className="adm-page-desc">View and manage all customer orders.</p>
         </div>
       </div>
-      <div className="adm-filters">
-        <SearchBar value={search} onChange={setSearch} placeholder="Search by order ID or customer" />
-        <div className="adm-filter-tabs">
-          {statuses.map(s => (
-            <button key={s} className={`adm-filter-tab ${filter === s ? 'active' : ''}`} onClick={() => setFilter(s)}>{s}</button>
-          ))}
-        </div>
+
+      {/* ── Main tab bar ── */}
+      <div className="adm-orders-tabs">
+        <button
+          className={`adm-orders-tab${activeTab === 'incoming' ? ' active' : ''}`}
+          onClick={() => setActiveTab('incoming')}
+        >
+          Incoming orders
+        </button>
+        <button
+          className={`adm-orders-tab${activeTab === 'history' ? ' active' : ''}`}
+          onClick={() => setActiveTab('history')}
+        >
+          Order history
+        </button>
       </div>
-      <div className="adm-count-pills">
-        <span className="adm-pill">{orders.length} total</span>
-        <span className="adm-pill adm-pill--yellow">{orders.filter(o=>o.status==='Pending').length} pending</span>
-        <span className="adm-pill adm-pill--green">{orders.filter(o=>o.status==='Completed').length} completed</span>
-      </div>
-      <div className="adm-card adm-card--flush">
-        <table className="adm-table">
-          <thead><tr><th>Order ID</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
-          <tbody>
-            {filtered.map(o => (
-              <tr key={o.id}>
-                <td className="adm-mono">{o.id}</td>
-                <td>{o.customer || o.userId || 'Guest'}</td>
-                <td className="adm-muted" style={{maxWidth:'180px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{(o.items||[]).join(', ')}</td>
-                <td className="adm-bold">₱{o.total}</td>
-                <td><StatusBadge status={o.status} /></td>
-                <td className="adm-muted" style={{fontSize:'0.8rem'}}>{o.date}</td>
-                <td>
-                  <div className="adm-actions">
+      <div className="adm-orders-tab-line" />
+
+      {/* ── Incoming Orders — card grid ── */}
+      {activeTab === 'incoming' && (
+        incomingOrders.length === 0 ? (
+          <div className="adm-empty-state">No incoming orders at the moment.</div>
+        ) : (
+          <div className="adm-order-cards">
+            {incomingOrders.map(o => {
+              const parts = (o.date || '').split('·');
+              const datePart = parts[0]?.trim() || '';
+              const timePart = parts[1]?.trim() || '';
+              const orderId = (o.id || '').replace(/^#/, 'ORD-');
+
+              return (
+                <div key={o.id} className="adm-order-card">
+                  <div className="adm-order-card__header">
+                    <div className="adm-order-card__header-row1">
+                      <span className="adm-order-card__time">{timePart}</span>
+                      <span className="adm-order-card__id-top">{orderId}</span>
+                    </div>
+                    <div className="adm-order-card__header-row2">
+                      <span className="adm-order-card__date">{datePart}</span>
+                      <span className="adm-order-card__id-sub">{orderId}</span>
+                    </div>
+                  </div>
+
+                  <div className="adm-order-card__body">
+                    {(o.items || []).map((item, idx) => {
+                      const match = item.match(/^(\d+)x\s+(.+)$/);
+                      const qty  = match ? match[1] : '';
+                      const name = match ? match[2] : item;
+                      const addons = (o.addons && o.addons[idx]) ? o.addons[idx] : [];
+
+                      return (
+                        <div key={idx} className="adm-order-card__item-wrap">
+                          {idx > 0 && <div className="adm-order-card__divider" />}
+                          <div className="adm-order-card__item">
+                            <span className="adm-order-card__item-qty">{qty}x</span>
+                            <span className="adm-order-card__item-name">{name}</span>
+                          </div>
+                          {addons.length > 0 && (
+                            <div className="adm-order-card__tags">
+                              {addons.map((tag, ti) => (
+                                <span key={ti} className="adm-order-card__tag">{tag}</span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="adm-order-card__footer">
                     {confirmCancelId === o.id ? (
-                      <>
-                        <span style={{fontSize:'0.75rem',color:'#ef4444',fontWeight:600}}>Cancel order?</span>
+                      <div className="adm-order-card__confirm">
+                        <span>Cancel order?</span>
                         <button className="adm-action-btn adm-action-btn--red" onClick={() => cancelOrder(o.id)}>Yes</button>
                         <button className="adm-action-btn" onClick={() => setConfirmCancelId(null)}>No</button>
-                      </>
+                      </div>
                     ) : (
-                      <>
+                      <div className="adm-order-card__actions">
                         {(o.status === 'Pending' || o.status === 'Preparing') && (
-                          <button className="adm-action-btn adm-action-btn--green" title={o.status==='Pending'?'Start Preparing':'Mark Completed'} onClick={() => cycleStatus(o)}>✓</button>
+                          <button
+                            className="adm-order-card__btn adm-order-card__btn--primary"
+                            onClick={() => cycleStatus(o)}
+                          >
+                            {o.status === 'Pending' ? 'Start Preparing' : 'Mark Completed'}
+                          </button>
                         )}
-                        {o.status !== 'Completed' && o.status !== 'Cancelled' && (
-                          <button className="adm-action-btn adm-action-btn--red" title="Cancel" onClick={() => setConfirmCancelId(o.id)}>✕</button>
-                        )}
-                      </>
+                        <button
+                          className="adm-order-card__btn adm-order-card__btn--cancel"
+                          onClick={() => setConfirmCancelId(o.id)}
+                        >
+                          Cancel
+                        </button>
+                      </div>
                     )}
                   </div>
-                </td>
-              </tr>
-            ))}
-            {filtered.length === 0 && <tr><td colSpan="7" className="adm-muted" style={{textAlign:'center',padding:'24px'}}>No orders found.</td></tr>}
-          </tbody>
-        </table>
-      </div>
+                </div>
+              );
+            })}
+          </div>
+        )
+      )}
+
+      {/* ── Order History — table ── */}
+      {activeTab === 'history' && (
+        <>
+          <div className="adm-filters" style={{ marginBottom: '16px' }}>
+            <SearchBar value={search} onChange={setSearch} placeholder="Search by order ID or customer" />
+          </div>
+          <div className="adm-card adm-card--flush">
+            <table className="adm-table">
+              <thead>
+                <tr>
+                  <th>Transaction ID</th>
+                  <th>Customer</th>
+                  <th>Total</th>
+                  <th>Payment</th>
+                  <th>Date and Time</th>
+                  <th>Status</th>
+                  <th>Employee</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {historyOrders.map(o => (
+                  <tr key={o.id}>
+                    <td className="adm-mono">{(o.id || '').replace(/^#/, 'ORD-')}</td>
+                    <td>{o.customer || o.userId || 'Guest'}</td>
+                    <td className="adm-bold">
+                      ₱{typeof o.total === 'number'
+                        ? o.total.toLocaleString('en-PH', { minimumFractionDigits: 2 })
+                        : o.total}
+                    </td>
+                    <td>{o.payment || 'Cash'}</td>
+                    <td className="adm-muted" style={{ fontSize: '0.8rem' }}>{o.date}</td>
+                    <td><StatusBadge status={o.status} /></td>
+                    <td>{o.employee || adminName}</td>
+                    <td>
+                      <button className="adm-order-action-dots" title="More actions">•••</button>
+                    </td>
+                  </tr>
+                ))}
+                {historyOrders.length === 0 && (
+                  <tr>
+                    <td colSpan="8" className="adm-muted" style={{ textAlign: 'center', padding: '24px' }}>
+                      No order history found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
     </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════
+   EMPLOYEE MODAL
+   ══════════════════════════════════════════════════ */
+function EmployeeModal({ employee, onClose, onSave, onDelete }) {
+  const { orders } = useStore();
+  const [tab, setTab] = useState('profile');
+  const [form, setForm] = useState({
+    firstName: employee.name?.split(' ')[0] || '',
+    lastName:  employee.name?.split(' ').slice(1).join(' ') || '',
+    email:     employee.email || '',
+    phone:     employee.phone || '',
+    position:  employee.position || '',
+    hireDate:  employee.hireDate || '',
+  });
+
+  const empOrders = orders.filter(o =>
+    (o.employee || '').toLowerCase() === (employee.name || '').toLowerCase()
+  );
+
+  function initials(name) {
+    const parts = (name || '').trim().split(' ');
+    return ((parts[0]?.[0] || '') + (parts[1]?.[0] || '')).toUpperCase();
+  }
+
+  function handleSave() {
+    onSave({
+      ...employee,
+      name:     `${form.firstName} ${form.lastName}`.trim(),
+      email:    form.email,
+      phone:    form.phone,
+      position: form.position,
+      hireDate: form.hireDate,
+    });
+  }
+
+  return createPortal(
+    <div className="emp-overlay" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="emp-modal">
+        {/* Left panel */}
+        <div className="emp-modal__left">
+          <div className="emp-modal__avatar">{initials(employee.name)}</div>
+          <p className="emp-modal__emp-name">{employee.name}</p>
+          <p className="emp-modal__emp-role">{employee.position}</p>
+          <nav className="emp-modal__nav">
+            <button
+              className={`emp-modal__nav-btn${tab === 'profile' ? ' active' : ''}`}
+              onClick={() => setTab('profile')}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              Profile
+            </button>
+            <button
+              className={`emp-modal__nav-btn${tab === 'history' ? ' active' : ''}`}
+              onClick={() => setTab('history')}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              Transaction History
+            </button>
+          </nav>
+        </div>
+
+        {/* Right panel */}
+        <div className="emp-modal__right">
+          {tab === 'profile' && (
+            <>
+              <div className="emp-modal__right-hdr">
+                <h3>Personal Information</h3>
+                <button className="emp-modal__close" onClick={onClose}>×</button>
+              </div>
+              <div className="emp-modal__form">
+                <div className="emp-modal__row">
+                  <div className="emp-modal__field">
+                    <label>First Name</label>
+                    <input value={form.firstName} onChange={e => setForm({...form, firstName: e.target.value})} />
+                  </div>
+                  <div className="emp-modal__field">
+                    <label>Last Name</label>
+                    <input value={form.lastName} onChange={e => setForm({...form, lastName: e.target.value})} />
+                  </div>
+                </div>
+                <div className="emp-modal__row">
+                  <div className="emp-modal__field">
+                    <label>Email</label>
+                    <input value={form.email} onChange={e => setForm({...form, email: e.target.value})} />
+                  </div>
+                  <div className="emp-modal__field">
+                    <label>Contact No.</label>
+                    <input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
+                  </div>
+                </div>
+                <div className="emp-modal__row">
+                  <div className="emp-modal__field">
+                    <label>Role</label>
+                    <input value={form.position} onChange={e => setForm({...form, position: e.target.value})} />
+                  </div>
+                  <div className="emp-modal__field">
+                    <label>Hire Date</label>
+                    <input value={form.hireDate} placeholder="MM-DD-YY" onChange={e => setForm({...form, hireDate: e.target.value})} />
+                  </div>
+                </div>
+              </div>
+              <div className="emp-modal__footer">
+                <button className="emp-modal__btn--delete" onClick={() => onDelete(employee.id)}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+                  Delete Profile
+                </button>
+                <button className="emp-modal__btn--save" onClick={handleSave}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  Save Changes
+                </button>
+              </div>
+            </>
+          )}
+
+          {tab === 'history' && (
+            <>
+              <div className="emp-modal__right-hdr">
+                <h3>{employee.name?.split(' ')[0]}&apos;s Transaction History</h3>
+                <button className="emp-modal__close" onClick={onClose}>×</button>
+              </div>
+              <div className="emp-modal__table-wrap">
+                <table className="adm-table">
+                  <thead>
+                    <tr>
+                      <th>Transaction ID</th>
+                      <th>Date and Time</th>
+                      <th>Total Amount</th>
+                      <th>Payment Method</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {empOrders.length === 0 && (
+                      <tr>
+                        <td colSpan="6" className="adm-muted" style={{ textAlign: 'center', padding: '32px' }}>
+                          No transactions found for this employee.
+                        </td>
+                      </tr>
+                    )}
+                    {empOrders.map(o => (
+                      <tr key={o.id}>
+                        <td className="adm-mono">{(o.id || '').replace(/^#/, 'ORD-')}</td>
+                        <td className="adm-muted" style={{ fontSize: '0.8rem' }}>{o.date}</td>
+                        <td className="adm-bold">
+                          ₱{typeof o.total === 'number'
+                            ? o.total.toLocaleString('en-PH', { minimumFractionDigits: 2 })
+                            : o.total}
+                        </td>
+                        <td>{o.payment || 'Cash'}</td>
+                        <td><StatusBadge status={o.status} /></td>
+                        <td><button className="adm-order-action-dots">•••</button></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>,
+    document.body
   );
 }
 
@@ -1541,85 +1913,140 @@ function OrdersSection() {
    SECTION: EMPLOYEES
    ══════════════════════════════════════════════════ */
 function EmployeesSection() {
-  const { employees, deleteEmployee } = useStore();
-  const [search, setSearch]   = useState('');
-  const [posFilter, setPos]   = useState('All Positions');
-  const [statFilter, setStat] = useState('All Statuses');
-  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
-  const positions = ['All Positions', ...new Set(employees.map(e => e.position))];
-  const statuses  = ['All Statuses', 'Active', 'Inactive'];
+  const { employees, updateEmployee, deleteEmployee } = useStore();
+  const [search, setSearch]       = useState('');
+  const [selectedEmp, setSelectedEmp] = useState(null);
+
+  const activeCount   = employees.filter(e => e.status === 'Active').length;
+  const inactiveCount = employees.filter(e => e.status === 'Inactive').length;
+
   const filtered = employees.filter(e =>
-    (posFilter  === 'All Positions' || e.position === posFilter) &&
-    (statFilter === 'All Statuses'  || e.status   === statFilter) &&
-    (e.name.toLowerCase().includes(search.toLowerCase()) || e.empId.includes(search))
+    e.name.toLowerCase().includes(search.toLowerCase()) ||
+    e.empId.includes(search) ||
+    e.email.toLowerCase().includes(search.toLowerCase())
   );
-  const baristas = employees.filter(e => e.position === 'Barista').length;
-  const cashiers = employees.filter(e => e.position === 'Cashier').length;
-  function handleDelete(id) { deleteEmployee(id); setConfirmDeleteId(null); }
+
+  function initials(name) {
+    const parts = (name || '').trim().split(' ');
+    return ((parts[0]?.[0] || '') + (parts[1]?.[0] || '')).toUpperCase();
+  }
+
+  function handleSave(updated) {
+    updateEmployee(updated);
+    setSelectedEmp(updated);
+  }
+
+  function handleDelete(id) {
+    deleteEmployee(id);
+    setSelectedEmp(null);
+  }
 
   return (
     <div className="adm-content">
-      {/* Delete confirm modal */}
-      {confirmDeleteId && (() => {
-        const emp = employees.find(x => x.id === confirmDeleteId);
-        return emp ? (
-          <DeleteConfirmModal
-            name={emp.name}
-            onConfirm={() => handleDelete(confirmDeleteId)}
-            onCancel={() => setConfirmDeleteId(null)}
-          />
-        ) : null;
-      })()}
+      {selectedEmp && (
+        <EmployeeModal
+          employee={selectedEmp}
+          onClose={() => setSelectedEmp(null)}
+          onSave={handleSave}
+          onDelete={handleDelete}
+        />
+      )}
 
-      <div className="adm-page-header">
-        <div>
-          <h1 className="adm-page-title">Manage Employees</h1>
-          <p className="adm-page-desc">View, add, and manage your team members.</p>
+      {/* Header */}
+      <div className="emp-section-header">
+        <h1 className="adm-page-title">Employees</h1>
+        <div className="emp-section-header__right">
+          <div className="adm-search">
+            {Icon.search}
+            <input
+              type="text"
+              placeholder="Search employee"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
+          <button className="emp-btn-add" title="Add employee">
+            {Icon.plus}
+          </button>
+          <button className="emp-btn-sort" title="Sort">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg>
+          </button>
         </div>
-        <button className="adm-btn-add">{Icon.plus} Add employee</button>
       </div>
 
-      <div className="adm-filters">
-        <SearchBar value={search} onChange={setSearch} placeholder="Enter Employee Name" />
-        <select className="adm-select" value={posFilter} onChange={e => setPos(e.target.value)}>
-          {positions.map(p => <option key={p}>{p}</option>)}
-        </select>
-        <select className="adm-select" value={statFilter} onChange={e => setStat(e.target.value)}>
-          {statuses.map(s => <option key={s}>{s}</option>)}
-        </select>
+      {/* Stats row */}
+      <div className="emp-stats-row">
+        <span className="emp-stat-dot emp-stat-dot--active" />
+        <span className="emp-stat-label">Active {activeCount}</span>
+        <span className="emp-stat-dot emp-stat-dot--inactive" />
+        <span className="emp-stat-label">Inactive {inactiveCount}</span>
+        <span className="emp-stat-dot emp-stat-dot--total" />
+        <span className="emp-stat-label">Total {employees.length}</span>
       </div>
 
-      <div className="adm-count-pills">
-        <span className="adm-pill">{employees.length} total</span>
-        <span className="adm-pill">{baristas} barista{baristas !== 1 ? 's' : ''}</span>
-        <span className="adm-pill">{cashiers} cashier{cashiers !== 1 ? 's' : ''}</span>
-      </div>
-
+      {/* Table */}
       <div className="adm-card adm-card--flush">
-        <table className="adm-table">
+        <table className="adm-table emp-table">
           <thead>
             <tr>
-              <th>Employee ID</th><th>Employee Name</th><th>Position</th><th>Status</th><th>Username</th><th>Email</th><th>Phone</th><th>Action</th>
+              <th>Employee Name</th>
+              <th>Status</th>
+              <th>Email</th>
+              <th>Contact</th>
+              <th>Role</th>
+              <th>Last Active</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
             {filtered.map(e => (
               <tr key={e.id}>
-                <td className="adm-mono">{e.empId}</td>
-                <td className="adm-bold">{e.name}</td>
-                <td>{e.position}</td>
-                <td><StatusBadge status={e.status} /></td>
-                <td className="adm-muted">{e.username}</td>
+                <td>
+                  <div className="emp-name-cell">
+                    <div className="emp-avatar">{initials(e.name)}</div>
+                    <div>
+                      <div className="emp-name-text">{e.name}</div>
+                      <div className="emp-id-text">#{e.empId}</div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div className="emp-status-cell">
+                    <span className={`emp-status-dot ${e.status === 'Active' ? 'emp-status-dot--active' : 'emp-status-dot--inactive'}`} />
+                    {e.status}
+                  </div>
+                </td>
                 <td className="adm-muted">{e.email}</td>
                 <td className="adm-muted">{e.phone}</td>
+                <td>{e.position}</td>
+                <td className="adm-muted" style={{ fontSize: '0.8rem' }}>{e.lastActive || '—'}</td>
                 <td>
-                  <div className="adm-actions">
-                    <button className="adm-action-btn adm-action-btn--blue">{Icon.edit}</button>
-                    <button className="adm-action-btn adm-action-btn--red" onClick={() => setConfirmDeleteId(e.id)}>{Icon.trash}</button>
+                  <div className="emp-action-cell">
+                    <button
+                      className="emp-btn-view"
+                      onClick={() => setSelectedEmp(e)}
+                      title="View profile"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+                    <button
+                      className="emp-btn-edit"
+                      onClick={() => setSelectedEmp(e)}
+                      title="Edit employee"
+                    >
+                      {Icon.edit} Edit
+                    </button>
                   </div>
                 </td>
               </tr>
             ))}
+            {filtered.length === 0 && (
+              <tr>
+                <td colSpan="7" className="adm-muted" style={{ textAlign: 'center', padding: '32px' }}>
+                  No employees found.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -1630,60 +2057,132 @@ function EmployeesSection() {
 /* ══════════════════════════════════════════════════
    SECTION: SETTINGS
    ══════════════════════════════════════════════════ */
+function Toggle({ on, onChange }) {
+  return (
+    <button
+      type="button"
+      className={`stg-toggle${on ? ' stg-toggle--on' : ''}`}
+      onClick={() => onChange(!on)}
+      aria-checked={on}
+      role="switch"
+    >
+      <span className="stg-toggle__thumb" />
+    </button>
+  );
+}
+
 function SettingsSection({ onLogout }) {
-  const session = getAdminSession();
+  /* Notification toggles */
+  const [notifNewOrder,   setNotifNewOrder]   = useState(true);
+  const [notifLowStock,   setNotifLowStock]   = useState(true);
+  const [notifReward,     setNotifReward]     = useState(false);
+  /* Date & time */
+  const [autoTime,        setAutoTime]        = useState(true);
+  const [manualDate,      setManualDate]      = useState('April 3, 2026');
+  const [manualTime,      setManualTime]      = useState('10:30 PM');
+
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const now = new Date();
+  const dateOptions = MONTHS.map((m, i) => {
+    const d = new Date(now.getFullYear(), i, now.getDate());
+    return `${m} ${d.getDate()}, ${d.getFullYear()}`;
+  });
+  const timeOptions = [];
+  for (let h = 0; h < 24; h++) {
+    for (const m of ['00', '30']) {
+      const ampm = h < 12 ? 'AM' : 'PM';
+      const h12  = h % 12 === 0 ? 12 : h % 12;
+      timeOptions.push(`${h12}:${m} ${ampm}`);
+    }
+  }
+
   return (
     <div className="adm-content">
-      <div className="adm-page-header">
-        <div>
-          <h1 className="adm-page-title">Settings</h1>
-          <p className="adm-page-desc">Manage admin account and system preferences.</p>
+      {/* Header */}
+      <div className="stg-header">
+        <h1 className="adm-page-title">Settings</h1>
+        <div className="stg-header__right">
+          <div className="adm-search">
+            {Icon.search}
+            <input type="text" placeholder="Search" />
+          </div>
+          <button className="emp-btn-sort" title="Sort">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg>
+          </button>
         </div>
       </div>
 
-      {/* Admin account card */}
-      <div className="adm-card">
-        <div className="adm-card-hdr"><h3>Admin Account</h3></div>
-        <div className="adm-settings-profile">
-          <div className="adm-settings-avatar">A</div>
-          <div>
-            <p className="adm-bold">{session?.name || 'Admin'}</p>
-            <p className="adm-muted" style={{ fontSize:'0.85rem' }}>{session?.email}</p>
-            <p className="adm-muted" style={{ fontSize:'0.78rem', marginTop:'4px' }}>
-              Logged in: {session?.loginAt ? new Date(session.loginAt).toLocaleString('en-PH') : '—'}
-            </p>
+      {/* Settings card */}
+      <div className="stg-card">
+
+        {/* ── Notification Settings ── */}
+        <h2 className="stg-section-title">Notification Settings</h2>
+
+        <div className="stg-row">
+          <div className="stg-row__info">
+            <span className="stg-row__label">New Order Alert</span>
+            <span className="stg-row__desc">Notify when a new order is placed</span>
+          </div>
+          <Toggle on={notifNewOrder} onChange={setNotifNewOrder} />
+        </div>
+        <div className="stg-divider" />
+
+        <div className="stg-row">
+          <div className="stg-row__info">
+            <span className="stg-row__label">Low Stock Warning</span>
+            <span className="stg-row__desc">Alert when inventory is low</span>
+          </div>
+          <Toggle on={notifLowStock} onChange={setNotifLowStock} />
+        </div>
+        <div className="stg-divider" />
+
+        <div className="stg-row">
+          <div className="stg-row__info">
+            <span className="stg-row__label">Reward Redemption</span>
+            <span className="stg-row__desc">Notify when a customer redeems</span>
+          </div>
+          <Toggle on={notifReward} onChange={setNotifReward} />
+        </div>
+
+        <div className="stg-section-gap" />
+
+        {/* ── Date and Time Settings ── */}
+        <h2 className="stg-section-title">Date and Time Settings</h2>
+
+        <div className="stg-row">
+          <div className="stg-row__info">
+            <span className="stg-row__label">Set Data and Time Automatically</span>
+            <span className="stg-row__desc">Automatically set the time base on your local timezone</span>
+          </div>
+          <Toggle on={autoTime} onChange={setAutoTime} />
+        </div>
+        <div className="stg-divider" />
+
+        <div className="stg-row">
+          <div className="stg-row__info">
+            <span className="stg-row__label">Set Date and Time Manually</span>
+            <span className="stg-row__desc">Manually set your time if it is inaccurate</span>
+          </div>
+          <div className="stg-dt-pickers">
+            <select
+              className="stg-picker"
+              value={manualDate}
+              onChange={e => setManualDate(e.target.value)}
+              disabled={autoTime}
+            >
+              {dateOptions.map(d => <option key={d}>{d}</option>)}
+            </select>
+            <select
+              className="stg-picker"
+              value={manualTime}
+              onChange={e => setManualTime(e.target.value)}
+              disabled={autoTime}
+            >
+              {timeOptions.map(t => <option key={t}>{t}</option>)}
+            </select>
           </div>
         </div>
-      </div>
 
-      {/* Store info */}
-      <div className="adm-card">
-        <div className="adm-card-hdr"><h3>Store Information</h3></div>
-        <div className="adm-settings-grid">
-          {[
-            { label: 'Store Name',    value: 'JazSam Coffee & Treats' },
-            { label: 'Currency',      value: 'PHP (₱)' },
-            { label: 'Points Rate',   value: '1 point per ₱10 spent' },
-            { label: 'Stamp Goal',    value: '10 stamps per reward' },
-          ].map(f => (
-            <div key={f.label} className="adm-settings-field">
-              <label>{f.label}</label>
-              <input type="text" defaultValue={f.value} />
-            </div>
-          ))}
-        </div>
-        <button className="adm-btn-save">Save Changes</button>
-      </div>
-
-      {/* Danger zone */}
-      <div className="adm-card adm-card--danger">
-        <div className="adm-card-hdr"><h3>Session</h3></div>
-        <p className="adm-muted" style={{ marginBottom:'16px', fontSize:'0.875rem' }}>
-          End your current admin session and return to the login page.
-        </p>
-        <button className="adm-btn-logout" onClick={onLogout}>
-          {Icon.logout} Sign Out
-        </button>
       </div>
     </div>
   );

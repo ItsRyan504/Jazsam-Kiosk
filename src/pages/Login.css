@@ -1,5 +1,5 @@
 /* =============================
-   LOGIN PAGE — Split-Panel Design
+   LOGIN PAGE — Centered Card Design
    ============================= */
 
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@400;500;600;700&display=swap');
@@ -7,131 +7,13 @@
 .login-page {
   min-height: calc(100vh - 64px);
   display: flex;
-  align-items: stretch;
-  background: #faf7f4;
-  padding: 0;
-}
-
-/* ── Left Branding Panel ── */
-.login-panel-left {
-  flex: 0 0 38%;
-  min-width: 300px;
-  background: linear-gradient(155deg, #3b1e0c 0%, #6b3a1f 40%, #c88c5a 100%);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 36px 44px 48px;
-  position: relative;
-  overflow: hidden;
-}
-
-/* Decorative light blobs */
-.login-panel-left::before {
-  content: '';
-  position: absolute;
-  top: -80px;
-  right: -80px;
-  width: 320px;
-  height: 320px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(200,140,90,0.4) 0%, transparent 70%);
-  pointer-events: none;
-}
-
-.login-panel-left::after {
-  content: '';
-  position: absolute;
-  bottom: -60px;
-  left: -40px;
-  width: 260px;
-  height: 260px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(200,140,90,0.2) 0%, transparent 70%);
-  pointer-events: none;
-}
-
-/* Brand logo row */
-.lp-brand {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  position: relative;
-  z-index: 1;
-}
-
-.lp-brand-icon {
-  width: 42px;
-  height: 42px;
-  object-fit: contain;
-  border-radius: 10px;
-  background: rgba(255,255,255,0.12);
-  padding: 6px;
-  flex-shrink: 0;
-}
-
-.lp-brand-name {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: #fff;
-  letter-spacing: 0.01em;
-}
-
-/* Center tagline */
-.lp-tagline {
-  position: relative;
-  z-index: 1;
-}
-
-.lp-tagline-title {
-  font-family: 'Playfair Display', serif;
-  font-size: 2.6rem;
-  font-weight: 800;
-  color: #fff;
-  line-height: 1.15;
-  margin-bottom: 16px;
-  letter-spacing: -0.01em;
-}
-
-.lp-tagline-subtitle {
-  font-family: 'Inter', sans-serif;
-  font-size: 0.95rem;
-  color: rgba(255,255,255,0.65);
-  line-height: 1.65;
-  max-width: 280px;
-}
-
-/* Decorative dots */
-.lp-dots {
-  display: flex;
-  gap: 8px;
-  position: relative;
-  z-index: 1;
-}
-
-.lp-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.25);
-}
-.lp-dot--active {
-  background: rgba(255,255,255,0.85);
-  width: 24px;
-  border-radius: 4px;
-}
-
-/* ── Right Form Panel ── */
-.login-panel-right {
-  flex: 1;
-  display: flex;
   align-items: center;
   justify-content: center;
-  padding: 48px 40px;
-  background: #fafaf8;
-  overflow-y: auto;
+  background: #faf7f4;
+  padding: 48px 20px;
 }
 
+/* ── Card ── */
 .login-card {
   background: #ffffff;
   border-radius: 20px;
@@ -576,27 +458,11 @@
   100% { transform: translateX(0); }
 }
 
-/* ---- "Not a barista?" footer note ---- */
-.login-note {
-  font-size: 0.78rem;
-  color: #b0a89e;
-  text-align: center;
-  margin-top: 16px;
-}
-
 /* ══ Responsive ══ */
-@media (max-width: 768px) {
-  .login-panel-left {
-    display: none;
-  }
-
+@media (max-width: 480px) {
   .login-page {
+    padding: 32px 16px;
     align-items: flex-start;
-    padding-top: 60px;
-  }
-
-  .login-panel-right {
-    padding: 32px 20px;
   }
 
   .login-card {
