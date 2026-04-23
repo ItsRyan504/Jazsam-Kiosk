@@ -27,7 +27,7 @@ function productCategoryToTab(cat) {
   }
 }
 
-const fmt = (n) => `₱${n.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
+const fmt = (n) => `₱${Number(n || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
 
 /* ─── Edit icon ─────────────────────────────────── */
 function EditIcon() {
@@ -262,18 +262,23 @@ export default function Menu() {
   const navigate               = useNavigate();
   const { products }           = useStore();
 
-  /* Build menu data from live products */
+  /* Build menu data from live products — includes unavailable items so they display with an overlay */
   const menuData = useMemo(() => {
     const map = { coffee: [], milktea: [], soda: [], mocktail: [], sides: [] };
     for (const p of products) {
-      if (p.status !== 'available') continue;
       const tab = productCategoryToTab(p.category);
       if (!tab || !map[tab]) continue;
+      const variantPrices = (p.variants || [])
+        .map(v => Number(v?.price))
+        .filter(price => Number.isFinite(price) && price > 0);
+      const basePrice = Number(p.price);
+      const resolvedPrice = basePrice > 0 ? basePrice : (variantPrices[0] || 0);
       map[tab].push({
-        id:    p.id,
-        name:  p.name,
-        price: p.price,
-        img:   p.image || '/cappuccino_cup.png',
+        id:        p.id,
+        name:      p.name,
+        price:     resolvedPrice,
+        img:       p.image || '/cappuccino_cup.png',
+        available: p.status === 'available',
       });
     }
     return map;
@@ -293,6 +298,7 @@ export default function Menu() {
 
   /* ── Card click handler ── */
   function handleItemClick(item) {
+    if (!item.available) return;
     if (user) {
       setSelectedItem(item);
     } else {
@@ -374,16 +380,21 @@ export default function Menu() {
                 {filtered.map(item => (
                   <div
                     key={item.id}
-                    className="menu-item-card"
+                    className={`menu-item-card${!item.available ? ' menu-item-card--unavailable' : ''}`}
                     id={`item-${activeCategory}-${item.id}`}
                     onClick={() => handleItemClick(item)}
                   >
                     <div className="menu-item-card__img-wrap">
                       <img src={item.img} alt={item.name} className="menu-item-card__img" />
+                      {!item.available && (
+                        <div className="menu-item-card__not-avail">
+                          <span>Not Available</span>
+                        </div>
+                      )}
                     </div>
                     <div className="menu-item-card__info">
                       <span className="menu-item-card__name">{item.name}</span>
-                      <span className="menu-item-card__price">PHP {item.price.toFixed(2)}</span>
+                      <span className="menu-item-card__price">PHP {Number(item.price).toFixed(2)}</span>
                     </div>
                   </div>
                 ))}

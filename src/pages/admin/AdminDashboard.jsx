@@ -93,6 +93,15 @@ function SectionHeader({ title, action, onAction }) {
   );
 }
 
+function toNumber(value, fallback = 0) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function formatPrice(value) {
+  return toNumber(value, 0).toFixed(2);
+}
+
 /* ══════════════════════════════════════════════════
    REUSABLE: DELETE CONFIRM MODAL
    Shows a centered overlay dialog instead of an
@@ -505,7 +514,7 @@ function ProductCard({ product, onEdit, onDelete }) {
       </div>
       <div className="prod-card__info">
         <p className="prod-card__name">{product.name}</p>
-        <p className="prod-card__price">₱ {product.price.toFixed(2)}</p>
+        <p className="prod-card__price">₱ {formatPrice(product.price)}</p>
         <div className="prod-card__avail">
           <span className={`prod-avail-badge ${product.status === 'available' ? 'prod-avail-badge--green' : 'prod-avail-badge--red'}`}>
             {product.status.toUpperCase()}
@@ -571,7 +580,7 @@ function ProductPanel({ open, mode, product, onClose, onSave, ingredientsList = 
     setAvailable(product?.status  !== 'unavailable');
     setImagePreview(product?.image || null);
     setImageUrl('');
-    const priceFallback = String((product?.price ?? 0).toFixed(2));
+    const priceFallback = formatPrice(product?.price);
     setBasePrice(priceFallback);
     const newSizeType = (product?.sizes || []).some(s => SIZE_OPTIONS_LABEL.includes(s)) ? 'S/M/L' : 'Oz';
     setSizeType(newSizeType);
@@ -580,7 +589,7 @@ function ProductPanel({ open, mode, product, onClose, onSave, ingredientsList = 
       setVariants(product.variants.map(v => ({
         variantId: v.variantId,
         size:      v.size || (newSizeType === 'S/M/L' ? 'Small' : '12oz'),
-        price:     String((v.price ?? 0).toFixed(2)),
+        price:     formatPrice(v?.price),
       })));
     } else if ((product?.sizes || []).length) {
       setVariants(product.sizes.map(s => ({ size: s, price: priceFallback })));
@@ -596,6 +605,7 @@ function ProductPanel({ open, mode, product, onClose, onSave, ingredientsList = 
   }
 
   const [nameError, setNameError] = useState('');
+  const [priceError, setPriceError] = useState('');
 
   function handleSave() {
     if (!productName.trim()) {
@@ -603,24 +613,35 @@ function ProductPanel({ open, mode, product, onClose, onSave, ingredientsList = 
       return;
     }
     setNameError('');
+    setPriceError('');
     const isFood = pCategory === 'Food';
+    const parsedBasePrice = toNumber(basePrice, 0);
+    const normalizedVariants = variants.map(v => ({
+      variantId: v.variantId ?? null,
+      size: v.size,
+      price: toNumber(v.price, 0),
+    }));
+    const firstVariantPrice = normalizedVariants.find(v => v.price > 0)?.price || 0;
+    const finalPrice = isFood ? parsedBasePrice : (parsedBasePrice > 0 ? parsedBasePrice : firstVariantPrice);
+
+    if (finalPrice <= 0) {
+      setPriceError('Please enter a valid price greater than 0.');
+      return;
+    }
+
     onSave({
       id:       product?.id || `p${Date.now()}`,
       name:     productName.trim(),
       category: isFood ? 'Sides' : bevType,
-      price:    parseFloat(basePrice) || parseFloat(variants[0]?.price || 0),
-      sizes:    isFood ? [] : variants.map(v => v.size),
+      price:    finalPrice,
+      sizes:    isFood ? [] : normalizedVariants.map(v => v.size),
       temps:    temperature,
       status:   available ? 'available' : 'unavailable',
       image:    imageTab === 'url' ? imageUrl : imagePreview,
       /* Pass full variant rows so the API can persist them */
       variants: isFood
-        ? [{ size: null, price: parseFloat(basePrice) }]
-        : variants.map(v => ({
-            variantId: v.variantId ?? null,
-            size:      v.size,
-            price:     parseFloat(v.price) || 0,
-          })),
+        ? [{ size: null, price: finalPrice }]
+        : normalizedVariants,
     });
     /* onClose is intentionally NOT called here — the parent (ProductsSection)
        closes the panel after showing a success toast */
@@ -735,8 +756,9 @@ function ProductPanel({ open, mode, product, onClose, onSave, ingredientsList = 
                   min="0"
                   placeholder="0.00"
                   value={basePrice}
-                  onChange={e => setBasePrice(e.target.value)}
+                  onChange={e => { setBasePrice(e.target.value); if (priceError) setPriceError(''); }}
                 />
+                {priceError && <p style={{ color: '#ef4444', fontSize: '0.75rem', marginTop: '4px' }}>{priceError}</p>}
               </div>
 
               <div className="pp-field">
@@ -785,59 +807,71 @@ function ProductPanel({ open, mode, product, onClose, onSave, ingredientsList = 
           {/* ── TAB: Variants ── */}
           {activeTab === 'variants' && (
             <div className="pp-body">
-              <div className="pp-field">
-                <label className="pp-label">Size Type</label>
-                <select
-                  className="pp-select"
-                  value={sizeType}
-                  onChange={e => {
-                    const t = e.target.value;
-                    setSizeType(t);
-                    setVariants([{ size: t === 'S/M/L' ? 'Small' : '12oz', price: '120.00' }]);
-                  }}
-                >
-                  <option>Oz</option>
-                  <option>S/M/L</option>
-                </select>
-              </div>
-
-              <div className="pp-variants-hdr">
-                <label className="pp-label">Sizes in {sizeType === 'S/M/L' ? 's/m/l' : 'oz'}</label>
-                <button type="button" className="pp-add-link" onClick={addVariant}>+ Add Size</button>
-              </div>
-
-              {variants.map((v, i) => (
-                <div key={i} className="pp-variant-row">
-                  <div className="pp-price-wrap">
-                    <span className="pp-price-prefix">Size</span>
+              {pCategory === 'Food' ? (
+                <div className="pp-field" style={{ textAlign: 'center', padding: '32px 0 16px' }}>
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#b0a89e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '10px' }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  <p className="pp-recipe-info" style={{ marginTop: 0 }}>
+                    Food items have a single fixed price — no size variants needed.<br />
+                    Set the price in the <strong>Product Info</strong> tab.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="pp-field">
+                    <label className="pp-label">Size Type</label>
                     <select
-                      className="pp-select pp-select--sm"
-                      value={v.size}
-                      onChange={e => updateVariant(i, 'size', e.target.value)}
+                      className="pp-select"
+                      value={sizeType}
+                      onChange={e => {
+                        const t = e.target.value;
+                        setSizeType(t);
+                        setVariants([{ size: t === 'S/M/L' ? 'Small' : '12oz', price: '120.00' }]);
+                      }}
                     >
-                      {getSizeOptions(sizeType).map(s => <option key={s}>{s}</option>)}
+                      <option>Oz</option>
+                      <option>S/M/L</option>
                     </select>
                   </div>
-                  <div className="pp-price-wrap">
-                    <span className="pp-price-prefix">Price (₱)</span>
-                    <input
-                      className="pp-input pp-input--price"
-                      type="number"
-                      step="0.01"
-                      value={v.price}
-                      onChange={e => updateVariant(i, 'price', e.target.value)}
-                    />
+
+                  <div className="pp-variants-hdr">
+                    <label className="pp-label">Sizes in {sizeType === 'S/M/L' ? 's/m/l' : 'oz'}</label>
+                    <button type="button" className="pp-add-link" onClick={addVariant}>+ Add Size</button>
                   </div>
-                  <div className="pp-remove-wrap">
-                    <button
-                      type="button"
-                      className="pp-remove-btn"
-                      onClick={() => removeVariant(i)}
-                      disabled={variants.length <= 1}
-                    >✕</button>
-                  </div>
-                </div>
-              ))}
+
+                  {variants.map((v, i) => (
+                    <div key={i} className="pp-variant-row">
+                      <div className="pp-price-wrap">
+                        <span className="pp-price-prefix">Size</span>
+                        <select
+                          className="pp-select pp-select--sm"
+                          value={v.size}
+                          onChange={e => updateVariant(i, 'size', e.target.value)}
+                        >
+                          {getSizeOptions(sizeType).map(s => <option key={s}>{s}</option>)}
+                        </select>
+                      </div>
+                      <div className="pp-price-wrap">
+                        <span className="pp-price-prefix">Price (₱)</span>
+                        <input
+                          className="pp-input pp-input--price"
+                          type="number"
+                          step="0.01"
+                          value={v.price}
+                          onChange={e => updateVariant(i, 'price', e.target.value)}
+                        />
+                      </div>
+                      <div className="pp-remove-wrap">
+                        <button
+                          type="button"
+                          className="pp-remove-btn"
+                          onClick={() => removeVariant(i)}
+                          disabled={variants.length <= 1}
+                        >✕</button>
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
 
               <div className="pp-checkbox-row" style={{ marginTop: '12px' }}>
                 <input
@@ -932,8 +966,7 @@ function ProductsSection() {
   function openAdd()        { setPanelMode('add');  setEditProduct(null); setPanelOpen(true); setConfirmDeleteId(null); }
   function openEdit(prod)   { setPanelMode('edit'); setEditProduct(prod); setPanelOpen(true); setConfirmDeleteId(null); }
   function handleDelete(id) {
-    const product = products.find(p => p.id === id);
-    if (product) updateProduct({ ...product, status: 'unavailable' });
+    deleteProduct(id);
     setConfirmDeleteId(null);
   }
   function handleSave(data) {
@@ -966,9 +999,9 @@ function ProductsSection() {
         return p ? (
           <DeleteConfirmModal
             name={p.name}
-            title="Mark as Unavailable?"
-            message={<>This will hide <strong>&ldquo;{p.name}&rdquo;</strong> from the menu. You can re-enable it anytime by editing the product.</>}
-            confirmLabel="Yes, mark unavailable"
+            title="Delete product permanently?"
+            message={<>This will permanently remove <strong>&ldquo;{p.name}&rdquo;</strong> from the product list and database.</>}
+            confirmLabel="Yes, delete permanently"
             onConfirm={() => handleDelete(confirmDeleteId)}
             onCancel={() => setConfirmDeleteId(null)}
           />

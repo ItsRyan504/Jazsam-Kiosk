@@ -11,6 +11,52 @@ const StoreContext = createContext(null);
 
 const API = 'http://localhost/salespresso-api';
 
+function toNumber(value, fallback = 0) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function parseMaybeJsonArray(value) {
+  if (Array.isArray(value)) return value;
+  if (typeof value !== 'string') return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function normalizeStringArray(value) {
+  return parseMaybeJsonArray(value).map(v => String(v)).filter(Boolean);
+}
+
+function normalizeVariants(value) {
+  return parseMaybeJsonArray(value).map((v, idx) => ({
+    variantId: v?.variantId ?? null,
+    size: v?.size ?? null,
+    price: toNumber(v?.price, 0),
+    _key: v?.variantId ?? `${idx}`,
+  }));
+}
+
+function normalizeProduct(p) {
+  const variants = normalizeVariants(p?.variants);
+  const variantPrice = variants.find(v => v.price > 0)?.price ?? 0;
+  const basePrice = toNumber(p?.price, 0);
+  return {
+    ...p,
+    name: p?.name || '',
+    category: p?.category || 'Coffee',
+    price: basePrice > 0 ? basePrice : variantPrice,
+    sizes: normalizeStringArray(p?.sizes),
+    temps: normalizeStringArray(p?.temps),
+    status: p?.status === 'unavailable' ? 'unavailable' : 'available',
+    image: p?.image || '',
+    variants,
+  };
+}
+
 /* ── Defaults (used as fallback when API is unreachable) ── */
 const DEFAULT_PRODUCTS = [
   { id: 'p1', name: 'Jazsam Classic',   category: 'Coffee',  price: 120, sizes: ['Small','Medium','Large'], temps: [],             status: 'available',   image: '/cappuccino_cup.png' },
@@ -69,7 +115,7 @@ export function StoreProvider({ children }) {
     ]).then(([prodRes, invRes, rwdRes, empRes]) => {
       let online = false;
       if (prodRes.status === 'fulfilled' && Array.isArray(prodRes.value) && prodRes.value.length > 0) {
-        setProducts(prodRes.value);
+        setProducts(prodRes.value.map(normalizeProduct));
         online = true;
       } else if (prodRes.status === 'fulfilled' && Array.isArray(prodRes.value)) {
         // API reachable but DB is empty — keep defaults visible so the UI isn't blank
@@ -101,25 +147,27 @@ export function StoreProvider({ children }) {
      PRODUCT CRUD
      ════════════════════════════════════════ */
   async function addProduct(p) {
+    const normalized = normalizeProduct(p);
     try {
-      const payload = buildProductPayload(p);
+      const payload = buildProductPayload(normalized);
       const result  = await apiFetch('products.php', { method: 'POST', body: JSON.stringify(payload) });
-      const savedId = result.id ?? p.id ?? `p${Date.now()}`;
-      setProducts(ps => [...ps, { ...p, id: savedId }]);
+      const savedId = result.id ?? normalized.id ?? `p${Date.now()}`;
+      setProducts(ps => [...ps, { ...normalized, id: savedId }]);
       return savedId;
     } catch {
       /* fallback: local only */
-      const id = p.id || `p${Date.now()}`;
-      setProducts(ps => [...ps, { ...p, id }]);
+      const id = normalized.id || `p${Date.now()}`;
+      setProducts(ps => [...ps, { ...normalized, id }]);
       return id;
     }
   }
 
   async function updateProduct(p) {
+    const normalized = normalizeProduct(p);
     /* Optimistic update */
-    setProducts(ps => ps.map(x => x.id === p.id ? p : x));
+    setProducts(ps => ps.map(x => x.id === normalized.id ? normalized : x));
     try {
-      await apiFetch('products.php', { method: 'PUT', body: JSON.stringify(buildProductPayload(p)) });
+      await apiFetch('products.php', { method: 'PUT', body: JSON.stringify(buildProductPayload(normalized)) });
     } catch {}
   }
 
