@@ -1138,24 +1138,30 @@ function InventorySection() {
    SECTION: REWARDS  (with two tabs + right panel)
    ══════════════════════════════════════════════════ */
 function RewardsSection() {
-  const { rewards, addReward, deleteReward } = useStore();
+  const { rewards, addReward, updateReward, deleteReward } = useStore();
   const [activeTab,   setActiveTab]   = useState('available');
   const [confirmId,   setConfirmId]   = useState(null);
-  const [showAdd,     setShowAdd]     = useState(false);
   const [searchCards, setSearchCards] = useState('');
 
-  /* right-panel state */
-  const [rightPanel,   setRightPanel]   = useState(null); // 'addStamps' | 'updateStep1' | 'updateStep2'
-  const [panelRow,     setPanelRow]     = useState(null); // current card row
+  /* right-panel state (shared for both tabs) */
+  const [rightPanel,   setRightPanel]   = useState(null);
+  // 'rewardDetail' | 'maxPoints' | 'addStamps' | 'updateStep1' | 'updateStep2'
+
+  /* Available Rewards panel state */
+  const [editingReward, setEditingReward] = useState(null);
+  const [rewardForm,    setRewardForm]    = useState({ name: '', type: 'Discount (%)', discountAmt: '', stamps: 10 });
+  const [maxPoints,     setMaxPoints]     = useState(30);
+  const [maxPointsDraft,setMaxPointsDraft]= useState('30');
+
+  /* Stamp Cards panel state */
+  const [panelRow,     setPanelRow]     = useState(null);
   const [addStampsAmt, setAddStampsAmt] = useState('');
   const [updateForm,   setUpdateForm]   = useState({ custName: '', custType: 'With Registered Jazsam Account', custId: '', cardNo: '' });
 
-  /* New reward form */
-  const [form, setForm] = useState({ name: '', type: 'Discount – Fixed Amount', value: '', stamps: 10 });
-  const TYPES = ['Discount – Fixed Amount', 'Discount – Percentage', 'Free Item'];
-  const CUST_TYPES = ['With Registered Jazsam Account', 'Walk-in / No Jazsam Account'];
+  const REWARD_TYPES = ['Discount (%)', 'Discount (₱)', 'Free Item', 'Birthday reward'];
+  const CUST_TYPES   = ['With Registered Jazsam Account', 'Walk-in / No Jazsam Account'];
 
-  const stampsRequired = rewards.length > 0 ? rewards[0].stamps : 10;
+  const stampsRequired = maxPoints;
 
   const allCustomers = (() => {
     try { return JSON.parse(localStorage.getItem('jazsam_users') || '[]'); }
@@ -1223,11 +1229,51 @@ function RewardsSection() {
     setPanelRow(null);
   }
 
-  function handleAddReward() {
-    if (!form.name.trim() || !form.value.trim()) return;
-    addReward({ ...form, stamps: Number(form.stamps) || 10 });
-    setForm({ name: '', type: 'Discount – Fixed Amount', value: '', stamps: 10 });
-    setShowAdd(false);
+  function openAddReward() {
+    setEditingReward(null);
+    setRewardForm({ name: '', type: 'Discount (%)', discountAmt: '', stamps: 10 });
+    setRightPanel('rewardDetail');
+  }
+
+  function openEditReward(r) {
+    setEditingReward(r);
+    setRewardForm({ name: r.name, type: r.type || 'Discount (%)', discountAmt: r.value || '', stamps: r.stamps || 10 });
+    setRightPanel('rewardDetail');
+  }
+
+  function handleSaveReward() {
+    if (!rewardForm.name.trim()) return;
+    const payload = { name: rewardForm.name, type: rewardForm.type, value: rewardForm.discountAmt, stamps: Number(rewardForm.stamps) || 10 };
+    if (editingReward) { updateReward({ ...editingReward, ...payload }); }
+    else               { addReward(payload); }
+    closePanel();
+  }
+
+  function openMaxPoints() {
+    setMaxPointsDraft(String(maxPoints));
+    setRightPanel('maxPoints');
+  }
+
+  function handleSaveMaxPoints() {
+    const v = parseInt(maxPointsDraft, 10);
+    if (v > 0) setMaxPoints(v);
+    closePanel();
+  }
+
+  function getTypeColor(type) {
+    if (!type) return '#7a7068';
+    if (type.includes('%'))      return '#0891b2';
+    if (type.includes('₱'))     return '#d97706';
+    if (type.includes('Free'))   return '#16a34a';
+    if (type.includes('Birthday')) return '#9333ea';
+    return '#7a7068';
+  }
+
+  function getAmountLabel(type) {
+    if (type === 'Discount (%)')  return { label: 'Discount amount', suffix: '%' };
+    if (type === 'Discount (₱)') return { label: 'Discount amount', suffix: '₱' };
+    if (type === 'Free Item')     return { label: 'Item description', suffix: '' };
+    return { label: 'Reward value', suffix: '' };
   }
 
   function rewardStatus(row) {
@@ -1254,7 +1300,7 @@ function RewardsSection() {
 
       {/* ── Header ── */}
       <div className="rwd-header">
-        <h1 className="adm-page-title">All rewards</h1>
+        <h1 className="adm-page-title">Loyalty Card Rewards</h1>
         <div className="rwd-header__right">
           <div className="adm-search">
             {Icon.search}
@@ -1265,45 +1311,24 @@ function RewardsSection() {
               onChange={e => setSearchCards(e.target.value)}
             />
           </div>
-          <button className="emp-btn-add" onClick={() => setShowAdd(v => !v)} title="Add reward">{Icon.plus}</button>
+          <button className="emp-btn-add" onClick={openAddReward} title="Add reward">{Icon.plus}</button>
           <button className="emp-btn-sort" title="Filter">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg>
           </button>
         </div>
       </div>
 
-      {/* ── Add Reward inline form ── */}
-      {showAdd && (
-        <div className="adm-card" style={{ marginBottom: 16 }}>
-          <div className="adm-card-hdr"><h3>New Reward</h3></div>
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end', padding: '0 0 8px' }}>
-            <div><label style={{ fontSize: '0.78rem', fontWeight: 600, display: 'block', marginBottom: 4 }}>Name</label>
-              <input className="pp-input" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. Reward 5" style={{ width: '140px' }} /></div>
-            <div><label style={{ fontSize: '0.78rem', fontWeight: 600, display: 'block', marginBottom: 4 }}>Type</label>
-              <select className="pp-select" value={form.type} onChange={e => setForm({ ...form, type: e.target.value })} style={{ width: '200px' }}>
-                {TYPES.map(t => <option key={t}>{t}</option>)}
-              </select></div>
-            <div><label style={{ fontSize: '0.78rem', fontWeight: 600, display: 'block', marginBottom: 4 }}>Value</label>
-              <input className="pp-input" value={form.value} onChange={e => setForm({ ...form, value: e.target.value })} placeholder="e.g. ₱20.00 Off" style={{ width: '150px' }} /></div>
-            <div><label style={{ fontSize: '0.78rem', fontWeight: 600, display: 'block', marginBottom: 4 }}>Stamps Needed</label>
-              <input className="pp-input" type="number" min="1" value={form.stamps} onChange={e => setForm({ ...form, stamps: Math.max(1, parseInt(e.target.value, 10) || 1) })} style={{ width: '80px' }} /></div>
-            <button className="pp-submit" style={{ height: '36px' }} onClick={handleAddReward}>Add</button>
-            <button className="pp-cancel" style={{ height: '36px' }} onClick={() => setShowAdd(false)}>Cancel</button>
-          </div>
-        </div>
-      )}
-
       {/* ── Tab bar ── */}
       <div className="adm-orders-tabs">
         <button
           className={`adm-orders-tab${activeTab === 'available' ? ' active' : ''}`}
-          onClick={() => setActiveTab('available')}
+          onClick={() => { setActiveTab('available'); closePanel(); }}
         >
           Available Rewards
         </button>
         <button
           className={`adm-orders-tab${activeTab === 'cards' ? ' active' : ''}`}
-          onClick={() => setActiveTab('cards')}
+          onClick={() => { setActiveTab('cards'); closePanel(); }}
         >
           Customer Stamp Cards
         </button>
@@ -1313,22 +1338,156 @@ function RewardsSection() {
       {/* ── Available Rewards tab ── */}
       {activeTab === 'available' && (
         <>
-          <div className="adm-count-pills">
-            <span className="adm-pill">{rewards.length} rewards</span>
+          {/* Sliding panels (fixed overlay, same style as Edit Product) */}
+          {(rightPanel === 'rewardDetail' || rightPanel === 'maxPoints') && (
+            <div className="pp-backdrop" onClick={closePanel} />
+          )}
+
+          {/* Reward Details panel */}
+          <aside className={`pp-panel ${rightPanel === 'rewardDetail' ? 'pp-panel--open' : ''}`}>
+            <div className="pp-inner">
+              <div className="pp-header">
+                <h2 className="pp-title">{editingReward ? 'Edit Reward' : 'Add Reward'}</h2>
+              </div>
+              <div className="pp-body">
+                <div className="pp-field">
+                  <label className="pp-label">Reward Name</label>
+                  <input
+                    className="pp-input"
+                    placeholder="e.g. Loyalty Card Reward 1"
+                    value={rewardForm.name}
+                    onChange={e => setRewardForm({ ...rewardForm, name: e.target.value })}
+                  />
+                </div>
+                <div className="pp-field">
+                  <label className="pp-label">Loyalty Reward Type</label>
+                  <select
+                    className="pp-select"
+                    value={rewardForm.type}
+                    onChange={e => setRewardForm({ ...rewardForm, type: e.target.value })}
+                  >
+                    {REWARD_TYPES.map(t => <option key={t}>{t}</option>)}
+                  </select>
+                </div>
+                {rewardForm.type !== 'Birthday reward' && (
+                  <div className="pp-field">
+                    <label className="pp-label">{getAmountLabel(rewardForm.type).label}</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <input
+                        type={rewardForm.type === 'Free Item' ? 'text' : 'number'}
+                        className="pp-input"
+                        style={{ flex: 1 }}
+                        value={rewardForm.discountAmt}
+                        onChange={e => setRewardForm({ ...rewardForm, discountAmt: e.target.value })}
+                        placeholder={rewardForm.type === 'Free Item' ? 'e.g. Small Drink' : '0'}
+                      />
+                      {getAmountLabel(rewardForm.type).suffix && (
+                        <span style={{ fontSize: '0.85rem', color: '#7a7068', fontWeight: 600, flexShrink: 0 }}>
+                          {getAmountLabel(rewardForm.type).suffix}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+                <div className="pp-field">
+                  <label className="pp-label">Stamps Required</label>
+                  <input
+                    type="number"
+                    min="1"
+                    className="pp-input"
+                    value={rewardForm.stamps}
+                    onChange={e => setRewardForm({ ...rewardForm, stamps: Math.max(1, parseInt(e.target.value, 10) || 1) })}
+                  />
+                </div>
+              </div>
+              <div className="pp-footer">
+                <button className="pp-cancel" onClick={closePanel}>Cancel</button>
+                <button className="pp-submit" onClick={handleSaveReward}>
+                  {editingReward ? 'Save Changes' : 'Add Reward'}
+                </button>
+              </div>
+            </div>
+          </aside>
+
+          {/* Set Maximum Card Points panel */}
+          <aside className={`pp-panel ${rightPanel === 'maxPoints' ? 'pp-panel--open' : ''}`}>
+            <div className="pp-inner">
+              <div className="pp-header">
+                <h2 className="pp-title">Set Maximum Card Points</h2>
+              </div>
+              <div className="pp-body">
+                <p style={{ fontSize: '0.82rem', color: '#7a7068', lineHeight: 1.65, margin: 0 }}>
+                  Set a maximum number of points for the stamp card. Once a customer reaches this limit, the card can no longer collect stamps or be used. To continue receiving rewards, the customer must obtain a new card.
+                </p>
+                <div className="pp-field">
+                  <label className="pp-label">Max Points per Card</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <input
+                      type="number"
+                      min="1"
+                      className="pp-input"
+                      style={{ flex: 1 }}
+                      value={maxPointsDraft}
+                      onChange={e => setMaxPointsDraft(e.target.value)}
+                    />
+                    <span style={{ fontSize: '0.85rem', color: '#7a7068', fontWeight: 600, flexShrink: 0 }}>points</span>
+                  </div>
+                </div>
+              </div>
+              <div className="pp-footer">
+                <button className="pp-cancel" onClick={closePanel}>Cancel</button>
+                <button className="pp-submit" onClick={handleSaveMaxPoints}>Save</button>
+              </div>
+            </div>
+          </aside>
+
+          {/* Main content */}
+          <div className="rwd-maxpts-row">
+            <div className="rwd-maxpts-left">
+              <span className="rwd-maxpts-label">Max Points per Card :</span>
+              <span className="rwd-maxpts-value">{maxPoints}</span>
+              <button className="rwd-maxpts-edit" onClick={openMaxPoints} title="Edit max points">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+            </div>
+            <span className="rwd-avail-count">{rewards.length} rewards available</span>
           </div>
+
           <div className="adm-card adm-card--flush">
-            <table className="adm-table">
-              <thead><tr><th>Reward Name / Type</th><th>Value</th><th>Stamps Required</th><th>Actions</th></tr></thead>
+            <table className="adm-table rwd-avail-table">
+              <thead>
+                <tr>
+                  <th>Reward name</th>
+                  <th>Value</th>
+                  <th>Requirement</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
               <tbody>
-                {rewards.length === 0 && <tr><td colSpan="4" className="adm-muted" style={{ textAlign: 'center', padding: '24px' }}>No rewards yet. Click + to add one.</td></tr>}
+                {rewards.length === 0 && (
+                  <tr><td colSpan="4" className="adm-muted" style={{ textAlign: 'center', padding: '32px' }}>No rewards yet. Click + to add one.</td></tr>
+                )}
                 {rewards.map(r => (
                   <tr key={r.id}>
-                    <td><strong>{r.name}</strong><div className="adm-muted" style={{ fontSize: '0.78rem', marginTop: 2 }}>{r.type}</div></td>
-                    <td className="adm-bold">{r.value}</td>
-                    <td>{r.stamps}</td>
-                    <td><div className="adm-actions">
-                      <button className="adm-action-btn adm-action-btn--red" onClick={() => setConfirmId(r.id)}>{Icon.trash}</button>
-                    </div></td>
+                    <td>
+                      <div className="rwd-name-cell">
+                        <strong>{r.name}</strong>
+                        <span className="rwd-type-badge" style={{ color: getTypeColor(r.type) }}>{r.type}</span>
+                      </div>
+                    </td>
+                    <td>{r.value}</td>
+                    <td>{r.stamps} stamps</td>
+                    <td>
+                      <div className="rwd-avail-actions">
+                        <button className="rwd-avail-btn rwd-avail-btn--del" onClick={() => setConfirmId(r.id)} title="Delete">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                        </button>
+                        <button className="rwd-avail-btn rwd-avail-btn--edit" onClick={() => openEditReward(r)}>
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                          Edit
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -1914,8 +2073,9 @@ function EmployeeModal({ employee, onClose, onSave, onDelete }) {
    ══════════════════════════════════════════════════ */
 function EmployeesSection() {
   const { employees, updateEmployee, deleteEmployee } = useStore();
-  const [search, setSearch]       = useState('');
+  const [search, setSearch]           = useState('');
   const [selectedEmp, setSelectedEmp] = useState(null);
+  const [saveToast, setSaveToast]     = useState(false);
 
   const activeCount   = employees.filter(e => e.status === 'Active').length;
   const inactiveCount = employees.filter(e => e.status === 'Inactive').length;
@@ -1934,6 +2094,7 @@ function EmployeesSection() {
   function handleSave(updated) {
     updateEmployee(updated);
     setSelectedEmp(updated);
+    setSaveToast(true);
   }
 
   function handleDelete(id) {
@@ -1950,6 +2111,21 @@ function EmployeesSection() {
           onSave={handleSave}
           onDelete={handleDelete}
         />
+      )}
+
+      {/* ── Save success toast ── */}
+      {saveToast && createPortal(
+        <div className="emp-save-toast" onAnimationEnd={() => setSaveToast(false)}>
+          <div className="emp-save-toast__icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div className="emp-save-toast__text">
+            <span className="emp-save-toast__title">Changes Saved!</span>
+            <span className="emp-save-toast__sub">Employee profile has been updated.</span>
+          </div>
+          <button className="emp-save-toast__close" onClick={() => setSaveToast(false)}>×</button>
+        </div>,
+        document.body
       )}
 
       {/* Header */}

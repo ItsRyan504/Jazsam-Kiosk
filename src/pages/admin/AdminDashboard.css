@@ -6,7 +6,8 @@
 /* ── Shell (sidebar + main) ── */
 .adm-shell {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;        /* exact viewport height — prevents window-level scroll */
+  overflow: hidden;     /* only .adm-main-inner scrolls; keeps fixed panels stable */
   background: #f4f1ee;
   font-family: 'Inter', sans-serif;
   position: relative;
@@ -1246,6 +1247,7 @@
 /* ── Scrollable body ── */
 .pp-body {
   flex: 1;
+  min-height: 0;        /* allow the flex child to shrink below content height */
   overflow-y: auto;
   padding: 18px 20px;
   display: flex;
@@ -2939,3 +2941,228 @@
 .stg-toggle--on .stg-toggle__thumb {
   left: 27px;
 }
+
+/* ══════════════════════════════════════════════════
+   Available Rewards tab – new layout
+   ══════════════════════════════════════════════════ */
+
+/* Two-column wrapper: main table + optional right panel */
+.rwd-avail-layout {
+  display: flex;
+  gap: 0;
+  align-items: flex-start;
+}
+
+.rwd-avail-main {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Max Points per Card row */
+.rwd-maxpts-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: #fff;
+  border: 1px solid #e8e0d8;
+  border-radius: 10px;
+  margin-bottom: 14px;
+}
+
+.rwd-maxpts-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rwd-maxpts-label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.rwd-maxpts-value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  min-width: 28px;
+  text-align: center;
+}
+
+.rwd-maxpts-edit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: #3d2b1f;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.18s;
+}
+.rwd-maxpts-edit:hover { background: #6b3a1f; }
+
+.rwd-avail-count {
+  font-size: 0.82rem;
+  color: #7a7068;
+}
+
+/* Reward table overrides */
+.rwd-avail-table thead tr th {
+  background: #1a1a1a;
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 12px 16px;
+}
+
+.rwd-avail-table tbody tr {
+  border-bottom: 1px solid #f0ebe4;
+}
+
+.rwd-avail-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.rwd-avail-table tbody td {
+  padding: 14px 16px;
+  font-size: 0.88rem;
+  color: #1a1a1a;
+  vertical-align: middle;
+}
+
+/* Reward name + type label */
+.rwd-name-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.rwd-name-cell strong {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.rwd-type-badge {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Action buttons in available rewards table */
+.rwd-avail-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rwd-avail-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 7px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.18s;
+}
+.rwd-avail-btn:hover { opacity: 0.82; }
+
+.rwd-avail-btn--del {
+  background: #ef4444;
+  color: #fff;
+  padding: 6px 9px;
+}
+
+.rwd-avail-btn--edit {
+  background: #f59e0b;
+  color: #fff;
+}
+
+/* Panel description text */
+.rwd-panel-desc {
+  font-size: 0.82rem;
+  color: #7a7068;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ══════════════════════════════════════════════════
+   Employee Save Success Toast
+   ══════════════════════════════════════════════════ */
+@keyframes empToastIn {
+  from { opacity: 0; transform: translateY(20px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+@keyframes empToastOut {
+  0%   { opacity: 1; transform: translateY(0); }
+  70%  { opacity: 1; }
+  100% { opacity: 0; transform: translateY(12px); }
+}
+
+.emp-save-toast {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #ffffff;
+  border: 1px solid #e8e0d8;
+  border-left: 4px solid #22c55e;
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.14);
+  min-width: 280px;
+  max-width: 340px;
+  animation: empToastIn 0.28s ease forwards, empToastOut 0.4s ease 2.8s forwards;
+}
+
+.emp-save-toast__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #dcfce7;
+  color: #16a34a;
+  flex-shrink: 0;
+}
+
+.emp-save-toast__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.emp-save-toast__title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.emp-save-toast__sub {
+  font-size: 0.76rem;
+  color: #7a7068;
+}
+
+.emp-save-toast__close {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: #7a7068;
+  cursor: pointer;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.emp-save-toast__close:hover { color: #1a1a1a; background: #f4f1ee; }
