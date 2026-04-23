@@ -39,9 +39,9 @@ export function OrdersProvider({ children }) {
     // The StoreContext reads from localStorage, so forceRefresh by dispatching storage event
     window.dispatchEvent(new Event('jazsam_orders_updated'));
 
-    // Award points: 1 point per ₱10 spent
+    // Award points: 1 point per item ordered (based on quantity)
     if (user && addPoints) {
-      const pointsEarned = Math.floor(total / 10);
+      const pointsEarned = cartItems.reduce((sum, item) => sum + item.qty, 0);
       if (pointsEarned > 0) addPoints(pointsEarned);
     }
 

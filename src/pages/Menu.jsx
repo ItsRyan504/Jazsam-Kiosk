@@ -3,9 +3,10 @@ import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useOrders } from '../context/OrdersContext';
+import { useStore } from '../context/StoreContext';
 import './Menu.css';
 
-/* ─── Data ─────────────────────────────────────── */
+/* ─── Category config ───────────────────────────── */
 const CATEGORIES = [
   { id: 'coffee',   label: 'Coffee',   icon: '/coffee-icon.png'  },
   { id: 'milktea',  label: 'Milktea',  icon: '/milktea-icon.png' },
@@ -14,24 +15,17 @@ const CATEGORIES = [
   { id: 'sides',    label: 'Sides',    icon: '/sides-icon.png'   },
 ];
 
-const COFFEE_FILTERS = ['All', 'w/ Milk', 'Black'];
-
-const makeCoffeeItems = (n) =>
-  Array.from({ length: n }, (_, i) => ({
-    id:    `coffee-${i + 1}`,
-    name:  'Cappuccino',
-    price: 75,
-    img:   '/cappuccino_cup.png',
-    type:  i % 3 === 0 ? 'Black' : 'w/ Milk',
-  }));
-
-const MENU_DATA = {
-  coffee:   makeCoffeeItems(15),
-  milktea:  makeCoffeeItems(10).map((i, idx) => ({ ...i, id: `milktea-${idx+1}`,  name: 'Taro Milktea',   price: 80, type: 'All' })),
-  soda:     makeCoffeeItems(8).map((i, idx)  => ({ ...i, id: `soda-${idx+1}`,     name: 'Citrus Soda',    price: 65, type: 'All' })),
-  mocktail: makeCoffeeItems(6).map((i, idx)  => ({ ...i, id: `mocktail-${idx+1}`, name: 'Virgin Mojito',  price: 90, type: 'All' })),
-  sides:    makeCoffeeItems(8).map((i, idx)  => ({ ...i, id: `sides-${idx+1}`,    name: 'French Fries',   price: 55, type: 'All' })),
-};
+/** Maps a product's category string to a menu tab id */
+function productCategoryToTab(cat) {
+  switch (cat) {
+    case 'Coffee':                             return 'coffee';
+    case 'Milktea': case 'Matcha':             return 'milktea';
+    case 'Soda': case 'Lemonade':              return 'soda';
+    case 'Mocktail': case 'Mocktails':         return 'mocktail';
+    case 'Sides': case 'Meals': case 'Food':   return 'sides';
+    default:                                   return null;
+  }
+}
 
 const fmt = (n) => `₱${n.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
 
@@ -266,19 +260,33 @@ export default function Menu() {
   const { user }               = useAuth();
   const { placeOrder }         = useOrders();
   const navigate               = useNavigate();
+  const { products }           = useStore();
+
+  /* Build menu data from live products */
+  const menuData = useMemo(() => {
+    const map = { coffee: [], milktea: [], soda: [], mocktail: [], sides: [] };
+    for (const p of products) {
+      if (p.status !== 'available') continue;
+      const tab = productCategoryToTab(p.category);
+      if (!tab || !map[tab]) continue;
+      map[tab].push({
+        id:    p.id,
+        name:  p.name,
+        price: p.price,
+        img:   p.image || '/cappuccino_cup.png',
+      });
+    }
+    return map;
+  }, [products]);
 
   const [activeCategory,     setActiveCategory]     = useState('coffee');
-  const [activeCoffeeFilter, setActiveCoffeeFilter] = useState('All');
   const [selectedItem,       setSelectedItem]       = useState(null);
   const [showCheckout,       setShowCheckout]       = useState(false);
   const [cartItems,          setCartItems]          = useState([]);
   const [guestItem,          setGuestItem]          = useState(null);
 
-  const items = MENU_DATA[activeCategory] ?? [];
-  const filtered =
-    activeCategory === 'coffee' && activeCoffeeFilter !== 'All'
-      ? items.filter(i => i.type === activeCoffeeFilter)
-      : items;
+  const items    = menuData[activeCategory] ?? [];
+  const filtered = items;
 
   const sectionLabel =
     activeCategory.charAt(0).toUpperCase() + activeCategory.slice(1);
@@ -343,7 +351,7 @@ export default function Menu() {
                   key={cat.id}
                   id={`category-${cat.id}`}
                   className={`menu-cat-btn${activeCategory === cat.id ? ' menu-cat-btn--active' : ''}`}
-                  onClick={() => { setActiveCategory(cat.id); setActiveCoffeeFilter('All'); }}
+                  onClick={() => setActiveCategory(cat.id)}
                 >
                   <img src={cat.icon} alt={cat.label} className="menu-cat-btn__icon" />
                   <span className="menu-cat-btn__label">{cat.label}</span>
@@ -354,43 +362,33 @@ export default function Menu() {
 
           <section className="menu-grid-section">
             <div className="menu-grid-section__header">
-              <h2 className="menu-grid-section__title">
-                {activeCategory === 'coffee' ? 'Hot coffee' : sectionLabel}
-              </h2>
-              {activeCategory === 'coffee' && (
-                <div className="menu-filter-btns">
-                  {COFFEE_FILTERS.map(f => (
-                    <button
-                      key={f}
-                      id={`filter-${f.toLowerCase().replace(' ', '-')}`}
-                      className={`menu-filter-btn${activeCoffeeFilter === f ? ' menu-filter-btn--active' : ''}`}
-                      onClick={() => setActiveCoffeeFilter(f)}
-                    >
-                      {f}
-                    </button>
-                  ))}
-                </div>
-              )}
+              <h2 className="menu-grid-section__title">{sectionLabel}</h2>
             </div>
 
-            <div className={`menu-grid${user ? ' menu-grid--with-cart' : ''}`}>
-              {filtered.map(item => (
-                <div
-                  key={item.id}
-                  className="menu-item-card"
-                  id={`item-${activeCategory}-${item.id}`}
-                  onClick={() => handleItemClick(item)}
-                >
-                  <div className="menu-item-card__img-wrap">
-                    <img src={item.img} alt={item.name} className="menu-item-card__img" />
+            {filtered.length === 0 ? (
+              <div className="menu-empty-state">
+                <p className="menu-empty-state__msg">No items available in this category yet.</p>
+              </div>
+            ) : (
+              <div className={`menu-grid${user ? ' menu-grid--with-cart' : ''}`}>
+                {filtered.map(item => (
+                  <div
+                    key={item.id}
+                    className="menu-item-card"
+                    id={`item-${activeCategory}-${item.id}`}
+                    onClick={() => handleItemClick(item)}
+                  >
+                    <div className="menu-item-card__img-wrap">
+                      <img src={item.img} alt={item.name} className="menu-item-card__img" />
+                    </div>
+                    <div className="menu-item-card__info">
+                      <span className="menu-item-card__name">{item.name}</span>
+                      <span className="menu-item-card__price">PHP {item.price.toFixed(2)}</span>
+                    </div>
                   </div>
-                  <div className="menu-item-card__info">
-                    <span className="menu-item-card__name">{item.name}</span>
-                    <span className="menu-item-card__price">PHP {item.price.toFixed(2)}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </section>
         </div>
 

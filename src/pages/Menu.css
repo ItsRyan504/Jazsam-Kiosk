@@ -134,6 +134,16 @@
   color: var(--color-dark);
 }
 
+/* Empty state */
+.menu-empty-state {
+  padding: 48px 24px;
+  text-align: center;
+}
+.menu-empty-state__msg {
+  color: #8a7967;
+  font-size: 0.97rem;
+}
+
 /* Coffee filters */
 .menu-filter-btns {
   display: flex;

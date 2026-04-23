@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
 import { useNavigate } from 'react-router-dom';
@@ -98,7 +98,7 @@ function SectionHeader({ title, action, onAction }) {
    Shows a centered overlay dialog instead of an
    awkward inline confirm row.
    ══════════════════════════════════════════════════ */
-function DeleteConfirmModal({ name, onConfirm, onCancel }) {
+function DeleteConfirmModal({ name, onConfirm, onCancel, title, message, confirmLabel }) {
   // Use a portal so the backdrop renders into document.body,
   // escaping any parent overflow / transform / stacking-context.
   return createPortal(
@@ -112,8 +112,8 @@ function DeleteConfirmModal({ name, onConfirm, onCancel }) {
             <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
           </svg>
         </div>
-        <h3 className="dcm-title">Delete item?</h3>
-        <p className="dcm-msg">Are you sure you want to delete <strong>&ldquo;{name}&rdquo;</strong>? This action cannot be undone.</p>
+        <h3 className="dcm-title">{title || 'Delete item?'}</h3>
+        <p className="dcm-msg">{message || <>Are you sure you want to delete <strong>&ldquo;{name}&rdquo;</strong>? This action cannot be undone.</>}</p>
         <div className="dcm-actions">
           <button className="dcm-btn dcm-btn--cancel" onClick={onCancel}>Cancel</button>
           <button className="dcm-btn dcm-btn--delete" onClick={onConfirm}>
@@ -121,7 +121,7 @@ function DeleteConfirmModal({ name, onConfirm, onCancel }) {
               <polyline points="3 6 5 6 21 6"/>
               <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
             </svg>
-            Yes, delete
+            {confirmLabel || 'Yes, delete'}
           </button>
         </div>
       </div>
@@ -595,13 +595,20 @@ function ProductPanel({ open, mode, product, onClose, onSave, ingredientsList = 
     if (f) setImagePreview(URL.createObjectURL(f));
   }
 
+  const [nameError, setNameError] = useState('');
+
   function handleSave() {
+    if (!productName.trim()) {
+      setNameError('Product name is required.');
+      return;
+    }
+    setNameError('');
     const isFood = pCategory === 'Food';
     onSave({
       id:       product?.id || `p${Date.now()}`,
-      name:     productName,
+      name:     productName.trim(),
       category: isFood ? 'Sides' : bevType,
-      price:    parseFloat(isFood ? basePrice : (variants[0]?.price || 0)),
+      price:    parseFloat(basePrice) || parseFloat(variants[0]?.price || 0),
       sizes:    isFood ? [] : variants.map(v => v.size),
       temps:    temperature,
       status:   available ? 'available' : 'unavailable',
@@ -615,7 +622,8 @@ function ProductPanel({ open, mode, product, onClose, onSave, ingredientsList = 
             price:     parseFloat(v.price) || 0,
           })),
     });
-    onClose();
+    /* onClose is intentionally NOT called here — the parent (ProductsSection)
+       closes the panel after showing a success toast */
   }
 
   function toggleTemp(t) {
@@ -673,8 +681,10 @@ function ProductPanel({ open, mode, product, onClose, onSave, ingredientsList = 
                   type="text"
                   placeholder="e.g. Hazelnut Latte"
                   value={productName}
-                  onChange={e => setProductName(e.target.value)}
+                  onChange={e => { setProductName(e.target.value); if (nameError) setNameError(''); }}
+                  style={nameError ? { borderColor: '#ef4444' } : {}}
                 />
+                {nameError && <p style={{ color: '#ef4444', fontSize: '0.75rem', marginTop: '4px' }}>{nameError}</p>}
               </div>
 
               <div className="pp-field">
@@ -713,21 +723,21 @@ function ProductPanel({ open, mode, product, onClose, onSave, ingredientsList = 
                 </div>
               </div>
 
-              {/* Base price field for Food items (no variant sizes) */}
-              {pCategory === 'Food' && (
-                <div className="pp-field">
-                  <label className="pp-label">Price (₱)</label>
-                  <input
-                    className="pp-input"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="0.00"
-                    value={basePrice}
-                    onChange={e => setBasePrice(e.target.value)}
-                  />
-                </div>
-              )}
+              {/* Base price field — shown for all categories */}
+              <div className="pp-field">
+                <label className="pp-label">
+                  Price (₱){pCategory === 'Beverage' ? ' — base / no-size price' : ''}
+                </label>
+                <input
+                  className="pp-input"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="0.00"
+                  value={basePrice}
+                  onChange={e => setBasePrice(e.target.value)}
+                />
+              </div>
 
               <div className="pp-field">
                 <label className="pp-label">Product Image</label>
@@ -909,6 +919,7 @@ function ProductsSection() {
   const [panelMode,   setPanelMode]   = useState('add');
   const [editProduct, setEditProduct] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [saveToast,   setSaveToast]   = useState(false);
 
   const filtered  = products.filter(p =>
     (filter === 'All' || p.category === filter) &&
@@ -921,22 +932,43 @@ function ProductsSection() {
   function openAdd()        { setPanelMode('add');  setEditProduct(null); setPanelOpen(true); setConfirmDeleteId(null); }
   function openEdit(prod)   { setPanelMode('edit'); setEditProduct(prod); setPanelOpen(true); setConfirmDeleteId(null); }
   function handleDelete(id) {
-    deleteProduct(id);
+    const product = products.find(p => p.id === id);
+    if (product) updateProduct({ ...product, status: 'unavailable' });
     setConfirmDeleteId(null);
   }
   function handleSave(data) {
     if (panelMode === 'edit') updateProduct(data);
     else addProduct(data);
+    setPanelOpen(false);
+    setSaveToast(true);
   }
 
   return (
     <div className="adm-content adm-content--products">
+      {/* Save success toast */}
+      {saveToast && createPortal(
+        <div className="emp-save-toast" onAnimationEnd={() => setSaveToast(false)}>
+          <div className="emp-save-toast__icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div className="emp-save-toast__text">
+            <span className="emp-save-toast__title">Product Saved!</span>
+            <span className="emp-save-toast__sub">Product has been {panelMode === 'edit' ? 'updated' : 'added'} successfully.</span>
+          </div>
+          <button className="emp-save-toast__close" onClick={() => setSaveToast(false)}>×</button>
+        </div>,
+        document.body
+      )}
+
       {/* Delete confirm modal */}
       {confirmDeleteId && (() => {
         const p = products.find(x => x.id === confirmDeleteId);
         return p ? (
           <DeleteConfirmModal
             name={p.name}
+            title="Mark as Unavailable?"
+            message={<>This will hide <strong>&ldquo;{p.name}&rdquo;</strong> from the menu. You can re-enable it anytime by editing the product.</>}
+            confirmLabel="Yes, mark unavailable"
             onConfirm={() => handleDelete(confirmDeleteId)}
             onCancel={() => setConfirmDeleteId(null)}
           />
@@ -1093,8 +1125,8 @@ function InventorySection() {
           </thead>
           <tbody>
             {filtered.map(i => (
-              <>
-                <tr key={i.id}>
+              <React.Fragment key={i.id}>
+                <tr>
                   <td className="adm-bold">{i.name}</td>
                   <td>{i.qty} {i.unit}</td>
                   <td className="adm-muted">{i.threshold} {i.unit}</td>
@@ -1161,7 +1193,7 @@ function InventorySection() {
                     </td>
                   </tr>
                 )}
-              </>
+              </React.Fragment>
             ))}
           </tbody>
         </table>
@@ -1953,6 +1985,12 @@ function EmployeeModal({ employee, onClose, onSave, onDelete }) {
     hireDate:  employee.hireDate || '',
   });
 
+  const storageKey = `emp_img_${employee.id}`;
+  const [profileImg, setProfileImg] = useState(
+    () => localStorage.getItem(storageKey) || null
+  );
+  const fileInputRef = useRef(null);
+
   const empOrders = orders.filter(o =>
     (o.employee || '').toLowerCase() === (employee.name || '').toLowerCase()
   );
@@ -1960,6 +1998,18 @@ function EmployeeModal({ employee, onClose, onSave, onDelete }) {
   function initials(name) {
     const parts = (name || '').trim().split(' ');
     return ((parts[0]?.[0] || '') + (parts[1]?.[0] || '')).toUpperCase();
+  }
+
+  function handlePhotoChange(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const b64 = ev.target.result;
+      setProfileImg(b64);
+      localStorage.setItem(storageKey, b64);
+    };
+    reader.readAsDataURL(file);
   }
 
   function handleSave() {
@@ -1978,7 +2028,30 @@ function EmployeeModal({ employee, onClose, onSave, onDelete }) {
       <div className="emp-modal">
         {/* Left panel */}
         <div className="emp-modal__left">
-          <div className="emp-modal__avatar">{initials(employee.name)}</div>
+          {/* Avatar with photo upload */}
+          <div
+            className="emp-modal__avatar emp-modal__avatar--clickable"
+            onClick={() => fileInputRef.current?.click()}
+            title="Change profile photo"
+          >
+            {profileImg
+              ? <img src={profileImg} alt="Profile" className="emp-modal__avatar-img" />
+              : initials(employee.name)
+            }
+            <div className="emp-modal__avatar-overlay">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                <circle cx="12" cy="13" r="4"/>
+              </svg>
+            </div>
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={handlePhotoChange}
+          />
           <p className="emp-modal__emp-name">{employee.name}</p>
           <p className="emp-modal__emp-role">{employee.position}</p>
           <nav className="emp-modal__nav">
@@ -2112,6 +2185,7 @@ function EmployeesSection() {
   const [search, setSearch]           = useState('');
   const [selectedEmp, setSelectedEmp] = useState(null);
   const [saveToast, setSaveToast]     = useState(false);
+  const [, forceUpdate]               = useState(0);
 
   const activeCount   = employees.filter(e => e.status === 'Active').length;
   const inactiveCount = employees.filter(e => e.status === 'Inactive').length;
@@ -2127,10 +2201,15 @@ function EmployeesSection() {
     return ((parts[0]?.[0] || '') + (parts[1]?.[0] || '')).toUpperCase();
   }
 
+  function getEmpPhoto(id) {
+    try { return localStorage.getItem(`emp_img_${id}`) || null; } catch { return null; }
+  }
+
   function handleSave(updated) {
     updateEmployee(updated);
-    setSelectedEmp(updated);
+    setSelectedEmp(null);
     setSaveToast(true);
+    forceUpdate(n => n + 1);
   }
 
   function handleDelete(id) {
@@ -2211,11 +2290,18 @@ function EmployeesSection() {
             </tr>
           </thead>
           <tbody>
-            {filtered.map(e => (
+            {filtered.map(e => {
+              const empPhoto = getEmpPhoto(e.id);
+              return (
               <tr key={e.id}>
                 <td>
                   <div className="emp-name-cell">
-                    <div className="emp-avatar">{initials(e.name)}</div>
+                    <div className="emp-avatar" style={{ overflow: 'hidden', padding: empPhoto ? 0 : undefined }}>
+                      {empPhoto
+                        ? <img src={empPhoto} alt={e.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                        : initials(e.name)
+                      }
+                    </div>
                     <div>
                       <div className="emp-name-text">{e.name}</div>
                       <div className="emp-id-text">#{e.empId}</div>
@@ -2251,7 +2337,8 @@ function EmployeesSection() {
                   </div>
                 </td>
               </tr>
-            ))}
+            );
+            })}
             {filtered.length === 0 && (
               <tr>
                 <td colSpan="7" className="adm-muted" style={{ textAlign: 'center', padding: '32px' }}>
@@ -2292,6 +2379,19 @@ function SettingsSection({ onLogout }) {
   const [autoTime,        setAutoTime]        = useState(true);
   const [manualDate,      setManualDate]      = useState('April 3, 2026');
   const [manualTime,      setManualTime]      = useState('10:30 PM');
+  /* Reset data */
+  const [resetConfirm,    setResetConfirm]    = useState(false);
+  const [resetDone,       setResetDone]       = useState(false);
+
+  function handleResetData() {
+    try {
+      localStorage.removeItem('jazsam_orders');
+      window.dispatchEvent(new Event('jazsam_orders_updated'));
+    } catch {}
+    setResetConfirm(false);
+    setResetDone(true);
+    setTimeout(() => setResetDone(false), 3000);
+  }
 
   const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   const now = new Date();
@@ -2395,6 +2495,63 @@ function SettingsSection({ onLogout }) {
           </div>
         </div>
 
+        <div className="stg-section-gap" />
+
+        {/* ── Data Management ── */}
+        <h2 className="stg-section-title">Data Management</h2>
+
+        <div className="stg-row" style={{ alignItems: 'flex-start', gap: '16px' }}>
+          <div className="stg-row__info">
+            <span className="stg-row__label">Reset Dashboard Data</span>
+            <span className="stg-row__desc">Clear all order records and reset dashboard statistics to zero. This cannot be undone.</span>
+          </div>
+          <div style={{ flexShrink: 0 }}>
+            {!resetConfirm ? (
+              <button
+                onClick={() => setResetConfirm(true)}
+                style={{
+                  padding: '8px 18px', borderRadius: '8px', border: '1.5px solid #ef4444',
+                  background: '#fff', color: '#ef4444', fontWeight: 700, fontSize: '0.82rem',
+                  cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'background 0.15s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = '#fef2f2'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = '#fff'; }}
+              >
+                Reset to Zero
+              </button>
+            ) : (
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.78rem', color: '#7a7068', fontWeight: 600 }}>Are you sure?</span>
+                <button
+                  onClick={handleResetData}
+                  style={{
+                    padding: '7px 14px', borderRadius: '7px', border: 'none',
+                    background: '#ef4444', color: '#fff', fontWeight: 700, fontSize: '0.8rem',
+                    cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                  }}
+                >
+                  Yes, reset
+                </button>
+                <button
+                  onClick={() => setResetConfirm(false)}
+                  style={{
+                    padding: '7px 14px', borderRadius: '7px', border: '1.5px solid #e0d9d0',
+                    background: '#fff', color: '#5a5450', fontWeight: 600, fontSize: '0.8rem',
+                    cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+            {resetDone && (
+              <p style={{ marginTop: '6px', fontSize: '0.75rem', color: '#22c55e', fontWeight: 600 }}>
+                Dashboard data has been reset.
+              </p>
+            )}
+          </div>
+        </div>
+
       </div>
     </div>
   );
@@ -2490,7 +2647,12 @@ export default function AdminDashboard() {
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
             </button>
             <div className="adm-topbar-avatar" title={session?.email}>
-              {session?.name?.[0] || 'A'}
+              {(() => {
+                const img = session?.id ? localStorage.getItem(`emp_img_${session.id}`) : null;
+                return img
+                  ? <img src={img} alt="Profile" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />
+                  : (session?.name?.[0] || 'A');
+              })()}
             </div>
           </div>
         </header>

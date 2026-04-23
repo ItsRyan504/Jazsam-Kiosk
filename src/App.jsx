@@ -20,15 +20,18 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import NotFound from './pages/NotFound';
 import './index.css';
 
-/* Hides Navbar + Footer on /admin routes */
+/* Hides Navbar + Footer on /admin, /login, and 404 routes */
+const CHROME_PATHS = new Set(['/', '/about', '/menu', '/location', '/my-orders', '/rewards', '/profile']);
+
 function Layout({ children }) {
   const loc = useLocation();
   const isAdmin = loc.pathname.startsWith('/admin');
+  const showChrome = !isAdmin && CHROME_PATHS.has(loc.pathname);
   return (
     <>
-      {!isAdmin && <Navbar />}
+      {showChrome && <Navbar />}
       {children}
-      {!isAdmin && <Footer />}
+      {showChrome && <Footer />}
     </>
   );
 }
