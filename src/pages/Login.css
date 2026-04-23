@@ -1,24 +1,145 @@
 /* =============================
-   LOGIN PAGE
+   LOGIN PAGE — Split-Panel Design
    ============================= */
 
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@400;500;600;700&display=swap');
+
 .login-page {
-  min-height: 100vh;
+  min-height: calc(100vh - 64px);
+  display: flex;
+  align-items: stretch;
+  background: #faf7f4;
+  padding: 0;
+}
+
+/* ── Left Branding Panel ── */
+.login-panel-left {
+  flex: 0 0 38%;
+  min-width: 300px;
+  background: linear-gradient(155deg, #3b1e0c 0%, #6b3a1f 40%, #c88c5a 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 36px 44px 48px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Decorative light blobs */
+.login-panel-left::before {
+  content: '';
+  position: absolute;
+  top: -80px;
+  right: -80px;
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(200,140,90,0.4) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.login-panel-left::after {
+  content: '';
+  position: absolute;
+  bottom: -60px;
+  left: -40px;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(200,140,90,0.2) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* Brand logo row */
+.lp-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  z-index: 1;
+}
+
+.lp-brand-icon {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.12);
+  padding: 6px;
+  flex-shrink: 0;
+}
+
+.lp-brand-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.01em;
+}
+
+/* Center tagline */
+.lp-tagline {
+  position: relative;
+  z-index: 1;
+}
+
+.lp-tagline-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.6rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.15;
+  margin-bottom: 16px;
+  letter-spacing: -0.01em;
+}
+
+.lp-tagline-subtitle {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+  color: rgba(255,255,255,0.65);
+  line-height: 1.65;
+  max-width: 280px;
+}
+
+/* Decorative dots */
+.lp-dots {
+  display: flex;
+  gap: 8px;
+  position: relative;
+  z-index: 1;
+}
+
+.lp-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.25);
+}
+.lp-dot--active {
+  background: rgba(255,255,255,0.85);
+  width: 24px;
+  border-radius: 4px;
+}
+
+/* ── Right Form Panel ── */
+.login-panel-right {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-bg);
-  padding: 80px 16px 40px;
+  padding: 48px 40px;
+  background: #fafaf8;
+  overflow-y: auto;
 }
 
 .login-card {
   background: #ffffff;
-  border-radius: 24px;
+  border-radius: 20px;
   border: 1px solid #e8e0d8;
-  box-shadow: 0 4px 32px rgba(0, 0, 0, 0.08);
-  padding: 48px 40px;
+  box-shadow: 0 4px 32px rgba(0, 0, 0, 0.07);
+  padding: 44px 40px;
   width: 100%;
-  max-width: 380px;
+  max-width: 400px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -32,21 +153,31 @@
 
 /* ---- Icon ---- */
 .login-icon {
-  width: 80px;
-  height: 80px;
+  width: 64px;
+  height: 64px;
   object-fit: contain;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 /* ---- Title ---- */
 .login-title {
-  font-family: var(--font-sans);
+  font-family: 'Inter', sans-serif;
   font-size: 1.35rem;
   font-weight: 700;
-  color: var(--color-dark);
+  color: #1a1108;
   text-align: center;
-  margin-bottom: 28px;
+  margin-bottom: 24px;
   line-height: 1.3;
+}
+
+/* ---- Subtitle ---- */
+.login-subtitle {
+  font-size: 0.85rem;
+  color: #8a8078;
+  text-align: center;
+  margin-top: -18px;
+  margin-bottom: 24px;
+  line-height: 1.5;
 }
 
 /* ---- Form ---- */
@@ -69,11 +200,12 @@
   border: 1.5px solid #d4cdc5;
   border-radius: 10px;
   font-size: 0.9rem;
-  font-family: var(--font-sans);
-  color: var(--color-dark);
+  font-family: 'Inter', sans-serif;
+  color: #1a1108;
   background: #fff;
   outline: none;
-  transition: border-color 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box;
 }
 
 .login-field input::placeholder {
@@ -81,10 +213,11 @@
 }
 
 .login-field input:focus {
-  border-color: var(--color-dark);
+  border-color: #6b3a1f;
+  box-shadow: 0 0 0 3px rgba(107,58,31,0.08);
 }
 
-/* Floating label variant — works for plain fields AND pw-wrapper fields */
+/* Floating label variant */
 .login-field.floating {
   position: relative;
 }
@@ -109,10 +242,10 @@
 .login-field.floating > input:not(:placeholder-shown) ~ label {
   top: 0;
   font-size: 0.75rem;
-  color: var(--color-dark);
+  color: #6b3a1f;
 }
 
-/* pw-wrapper field: label is sibling of input inside wrapper */
+/* pw-wrapper field */
 .pw-wrapper {
   position: relative;
 }
@@ -136,7 +269,7 @@
 .pw-wrapper input:not(:placeholder-shown) ~ label {
   top: 0;
   font-size: 0.75rem;
-  color: var(--color-dark);
+  color: #6b3a1f;
 }
 
 /* error tint on label */
@@ -171,7 +304,7 @@
 }
 
 .login-field .pw-toggle:hover {
-  color: var(--color-dark);
+  color: #6b3a1f;
 }
 
 /* Error state */
@@ -186,25 +319,26 @@
   padding-left: 4px;
 }
 
-/* ---- Btn Primary (full-width black) ---- */
+/* ---- Btn Primary (full-width) ---- */
 .login-btn-primary {
   width: 100%;
   padding: 14px;
-  background: var(--color-dark);
+  background: #1a1108;
   color: #fff;
   border: none;
   border-radius: 10px;
   font-size: 0.95rem;
   font-weight: 700;
-  font-family: var(--font-sans);
+  font-family: 'Inter', sans-serif;
   cursor: pointer;
   margin-top: 4px;
-  transition: background 0.2s ease, transform 0.15s ease;
+  transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
 }
 
 .login-btn-primary:hover {
-  background: #333;
+  background: #3b1e0c;
   transform: translateY(-1px);
+  box-shadow: 0 4px 18px rgba(107,58,31,0.25);
 }
 
 .login-btn-primary:active {
@@ -233,13 +367,13 @@
 }
 
 .login-forgot-btn:hover {
-  color: var(--color-dark);
+  color: #6b3a1f;
 }
 
 /* Forgot password desc */
 .forgot-desc {
   font-size: 0.85rem;
-  color: var(--color-muted);
+  color: #7a7068;
   text-align: center;
   line-height: 1.6;
   margin-bottom: 20px;
@@ -262,14 +396,14 @@
 
 .forgot-success__msg {
   font-size: 0.9rem;
-  color: var(--color-dark);
+  color: #1a1108;
   line-height: 1.6;
   margin-bottom: 6px;
 }
 
 .forgot-success__sub {
   font-size: 0.82rem;
-  color: var(--color-muted);
+  color: #7a7068;
   line-height: 1.6;
   margin-bottom: 8px;
 }
@@ -302,18 +436,18 @@
   width: 100%;
   padding: 13px;
   background: transparent;
-  color: var(--color-dark);
-  border: 1.5px solid var(--color-dark);
+  color: #1a1108;
+  border: 1.5px solid #1a1108;
   border-radius: 10px;
   font-size: 0.95rem;
   font-weight: 600;
-  font-family: var(--font-sans);
+  font-family: 'Inter', sans-serif;
   cursor: pointer;
   transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
 }
 
 .login-btn-outline:hover {
-  background: var(--color-dark);
+  background: #1a1108;
   color: #fff;
   transform: translateY(-1px);
 }
@@ -321,7 +455,7 @@
 /* ---- Back link ---- */
 .login-back-link {
   font-size: 0.82rem;
-  color: var(--color-dark);
+  color: #6b3a1f;
   text-align: center;
   margin-top: 20px;
   cursor: pointer;
@@ -331,7 +465,29 @@
 }
 
 .login-back-link:hover {
-  opacity: 0.6;
+  opacity: 0.65;
+}
+
+/* ---- Staff login button (ghost style) ---- */
+.login-btn-admin {
+  margin-top: 12px;
+  background: none;
+  border: 1.5px solid #d4cdc5;
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-size: 0.82rem;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  color: #a89f96;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+  width: 100%;
+}
+
+.login-btn-admin:hover {
+  border-color: #6b3a1f;
+  color: #6b3a1f;
+  background: rgba(107,58,31,0.04);
 }
 
 /* ---- Password checklist ---- */
@@ -385,7 +541,7 @@
 }
 
 .login-privacy a {
-  color: #1565c0;
+  color: #6b3a1f;
   text-decoration: underline;
   text-underline-offset: 2px;
 }
@@ -420,27 +576,29 @@
   100% { transform: translateX(0); }
 }
 
-/* ---- Btn Admin (subtle ghost) ---- */
-.login-btn-admin {
-  margin-top: 12px;
-  background: none;
-  border: 1.5px solid #d4cdc5;
-  border-radius: 10px;
-  padding: 10px 20px;
-  font-size: 0.82rem;
-  font-family: var(--font-sans);
-  font-weight: 600;
-  color: #a89f96;
-  cursor: pointer;
-  transition: border-color 0.2s, color 0.2s;
+/* ---- "Not a barista?" footer note ---- */
+.login-note {
+  font-size: 0.78rem;
+  color: #b0a89e;
+  text-align: center;
+  margin-top: 16px;
 }
 
-.login-btn-admin:hover {
-  border-color: var(--color-dark);
-  color: var(--color-dark);
-}
+/* ══ Responsive ══ */
+@media (max-width: 768px) {
+  .login-panel-left {
+    display: none;
+  }
 
-@media (max-width: 480px) {
+  .login-page {
+    align-items: flex-start;
+    padding-top: 60px;
+  }
+
+  .login-panel-right {
+    padding: 32px 20px;
+  }
+
   .login-card {
     padding: 36px 24px;
   }

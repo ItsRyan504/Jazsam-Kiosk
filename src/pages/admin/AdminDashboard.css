@@ -774,6 +774,119 @@
 }
 
 /* ==============================================
+   DELETE CONFIRM MODAL
+   ============================================== */
+
+.dcm-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: dcmFadeIn 0.18s ease;
+}
+
+@keyframes dcmFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.dcm-dialog {
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.22);
+  padding: 36px 32px 28px;
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  animation: dcmSlideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes dcmSlideUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.95); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.dcm-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.dcm-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #1a1a1a;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.dcm-msg {
+  font-size: 0.875rem;
+  color: #7a7472;
+  text-align: center;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+.dcm-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.dcm-btn {
+  flex: 1;
+  padding: 13px;
+  border-radius: 11px;
+  border: none;
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  transition: background 0.18s ease, transform 0.12s ease, box-shadow 0.18s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.dcm-btn--cancel {
+  background: #f4f1ee;
+  color: #5a5450;
+}
+.dcm-btn--cancel:hover {
+  background: #e8e2dc;
+  transform: translateY(-1px);
+}
+
+.dcm-btn--delete {
+  background: #ef4444;
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);
+}
+.dcm-btn--delete:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+}
+.dcm-btn--delete:active { transform: translateY(0); }
+
+/* ==============================================
    PRODUCTS SECTION — Card layout + Side Panel
    ============================================== */
 

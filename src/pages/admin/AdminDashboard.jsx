@@ -86,6 +86,40 @@ function SectionHeader({ title, action, onAction }) {
   );
 }
 
+/* ══════════════════════════════════════════════════
+   REUSABLE: DELETE CONFIRM MODAL
+   Shows a centered overlay dialog instead of an
+   awkward inline confirm row.
+   ══════════════════════════════════════════════════ */
+function DeleteConfirmModal({ name, onConfirm, onCancel }) {
+  return (
+    <div className="dcm-backdrop" onClick={onCancel}>
+      <div className="dcm-dialog" onClick={e => e.stopPropagation()}>
+        <div className="dcm-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+            <path d="M10 11v6M14 11v6"/>
+            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+          </svg>
+        </div>
+        <h3 className="dcm-title">Delete item?</h3>
+        <p className="dcm-msg">Are you sure you want to delete <strong>&ldquo;{name}&rdquo;</strong>? This action cannot be undone.</p>
+        <div className="dcm-actions">
+          <button className="dcm-btn dcm-btn--cancel" onClick={onCancel}>Cancel</button>
+          <button className="dcm-btn dcm-btn--delete" onClick={onConfirm}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+            </svg>
+            Yes, delete
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SearchBar({ value, onChange, placeholder }) {
   return (
     <div className="adm-search">
@@ -730,6 +764,18 @@ function ProductsSection() {
 
   return (
     <div className="adm-content adm-content--products">
+      {/* Delete confirm modal */}
+      {confirmDeleteId && (() => {
+        const p = products.find(x => x.id === confirmDeleteId);
+        return p ? (
+          <DeleteConfirmModal
+            name={p.name}
+            onConfirm={() => handleDelete(confirmDeleteId)}
+            onCancel={() => setConfirmDeleteId(null)}
+          />
+        ) : null;
+      })()}
+
       <div className="adm-page-header">
         <h1 className="adm-page-title">Products</h1>
         <button className="adm-btn-add" onClick={openAdd}>{Icon.plus} Add a product</button>
@@ -765,17 +811,7 @@ function ProductsSection() {
 
       <div className="prod-list">
         {filtered.map(p => (
-          confirmDeleteId === p.id ? (
-            <div key={p.id} className="prod-card" style={{border:'2px solid #ef4444',display:'flex',alignItems:'center',justifyContent:'space-between',padding:'16px 20px',gap:'12px'}}>
-              <span style={{fontWeight:600,color:'#ef4444'}}>Delete "{p.name}"?</span>
-              <div style={{display:'flex',gap:'8px'}}>
-                <button className="adm-action-btn adm-action-btn--red" style={{padding:'6px 14px',fontSize:'0.85rem'}} onClick={() => handleDelete(p.id)}>Yes, delete</button>
-                <button className="adm-action-btn" style={{padding:'6px 14px',fontSize:'0.85rem'}} onClick={() => setConfirmDeleteId(null)}>Cancel</button>
-              </div>
-            </div>
-          ) : (
-            <ProductCard key={p.id} product={p} onEdit={openEdit} onDelete={(id) => setConfirmDeleteId(id)} />
-          )
+          <ProductCard key={p.id} product={p} onEdit={openEdit} onDelete={(id) => setConfirmDeleteId(id)} />
         ))}
         {filtered.length === 0 && <p className="adm-muted" style={{padding:'24px 0'}}>No products found.</p>}
       </div>
@@ -831,6 +867,18 @@ function InventorySection() {
 
   return (
     <div className="adm-content">
+      {/* Delete confirm modal */}
+      {confirmDeleteId && (() => {
+        const item = inventory.find(x => x.id === confirmDeleteId);
+        return item ? (
+          <DeleteConfirmModal
+            name={item.name}
+            onConfirm={() => handleDelete(confirmDeleteId)}
+            onCancel={() => setConfirmDeleteId(null)}
+          />
+        ) : null;
+      })()}
+
       <div className="adm-page-header">
         <div>
           <h1 className="adm-page-title">Inventory</h1>
@@ -889,12 +937,6 @@ function InventorySection() {
                         <input type="number" min="0" className="pp-input" style={{width:'60px',height:'28px',fontSize:'0.8rem'}} value={restockAmt} onChange={e => setRestockAmt(Math.max(0, parseInt(e.target.value,10) || 0))} placeholder="qty" autoFocus />
                         <button className="adm-action-btn adm-action-btn--green" onClick={() => handleRestock(i.id)} title="Confirm">✓</button>
                         <button className="adm-action-btn" onClick={() => setRestockId(null)} title="Cancel">✕</button>
-                      </div>
-                    ) : confirmDeleteId === i.id ? (
-                      <div style={{display:'flex',gap:'4px',alignItems:'center'}}>
-                        <span style={{fontSize:'0.75rem',color:'#ef4444',fontWeight:600}}>Sure?</span>
-                        <button className="adm-action-btn adm-action-btn--red" onClick={() => handleDelete(i.id)} title="Confirm delete">Yes</button>
-                        <button className="adm-action-btn" onClick={() => setConfirmDeleteId(null)} title="Cancel">No</button>
                       </div>
                     ) : (
                       <>
@@ -1106,8 +1148,8 @@ function RewardsSection() {
   })();
 
   function handleDelete(id) {
-    if (confirmId === id) { deleteReward(id); setConfirmId(null); }
-    else setConfirmId(id);
+    deleteReward(id);
+    setConfirmId(null);
   }
 
   function handleAddReward() {
@@ -1152,6 +1194,18 @@ function RewardsSection() {
   /* ── Main Rewards view ── */
   return (
     <div className="adm-content">
+      {/* Delete confirm modal */}
+      {confirmId && (() => {
+        const r = rewards.find(x => x.id === confirmId);
+        return r ? (
+          <DeleteConfirmModal
+            name={r.name}
+            onConfirm={() => handleDelete(confirmId)}
+            onCancel={() => setConfirmId(null)}
+          />
+        ) : null;
+      })()}
+
       <div className="adm-page-header">
         <div>
           <h1 className="adm-page-title">Stamp Rewards</h1>
@@ -1181,7 +1235,7 @@ function RewardsSection() {
         </div>
       )}
 
-      {/* Clickable Banner → opens stamp cards view */}
+      {/* Clickable Banner */}
       <button
         className="adm-rewards-banner"
         style={{width:'100%',textAlign:'left',border:'none',cursor:'pointer'}}
@@ -1208,15 +1262,7 @@ function RewardsSection() {
                 <td className="adm-bold">{r.value}</td>
                 <td>{r.stamps}</td>
                 <td><div className="adm-actions">
-                  {confirmId === r.id ? (
-                    <>
-                      <span style={{fontSize:'0.75rem',color:'#ef4444',fontWeight:600,marginRight:4}}>Sure?</span>
-                      <button className="adm-action-btn adm-action-btn--red" onClick={() => handleDelete(r.id)}>Yes</button>
-                      <button className="adm-action-btn" onClick={() => setConfirmId(null)}>No</button>
-                    </>
-                  ) : (
-                    <button className="adm-action-btn adm-action-btn--red" onClick={() => setConfirmId(r.id)}>{Icon.trash}</button>
-                  )}
+                  <button className="adm-action-btn adm-action-btn--red" onClick={() => setConfirmId(r.id)}>{Icon.trash}</button>
                 </div></td>
               </tr>
             ))}
@@ -1336,6 +1382,18 @@ function EmployeesSection() {
 
   return (
     <div className="adm-content">
+      {/* Delete confirm modal */}
+      {confirmDeleteId && (() => {
+        const emp = employees.find(x => x.id === confirmDeleteId);
+        return emp ? (
+          <DeleteConfirmModal
+            name={emp.name}
+            onConfirm={() => handleDelete(confirmDeleteId)}
+            onCancel={() => setConfirmDeleteId(null)}
+          />
+        ) : null;
+      })()}
+
       <div className="adm-page-header">
         <div>
           <h1 className="adm-page-title">Manage Employees</h1>
@@ -1380,15 +1438,7 @@ function EmployeesSection() {
                 <td>
                   <div className="adm-actions">
                     <button className="adm-action-btn adm-action-btn--blue">{Icon.edit}</button>
-                    {confirmDeleteId === e.id ? (
-                      <>
-                        <span style={{fontSize:'0.75rem',color:'#ef4444',fontWeight:600}}>Sure?</span>
-                        <button className="adm-action-btn adm-action-btn--red" onClick={() => handleDelete(e.id)}>Yes</button>
-                        <button className="adm-action-btn" onClick={() => setConfirmDeleteId(null)}>No</button>
-                      </>
-                    ) : (
-                      <button className="adm-action-btn adm-action-btn--red" onClick={() => setConfirmDeleteId(e.id)}>{Icon.trash}</button>
-                    )}
+                    <button className="adm-action-btn adm-action-btn--red" onClick={() => setConfirmDeleteId(e.id)}>{Icon.trash}</button>
                   </div>
                 </td>
               </tr>

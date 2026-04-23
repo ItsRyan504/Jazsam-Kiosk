@@ -30,6 +30,33 @@ const PW_RULES = [
   { id: 'special', label: 'Must contain one special character (! @ # $ %)', test: (p) => /[!@#$%]/.test(p) },
 ];
 
+/* ─── Left branding panel ───────────────────── */
+function BrandPanel({ subtitle, tagline }) {
+  return (
+    <div className="login-panel-left">
+      <div className="lp-brand">
+        <img src="/login-icon.png" alt="JazSam" className="lp-brand-icon" />
+        <span className="lp-brand-name">Salespresso</span>
+      </div>
+
+      <div className="lp-tagline">
+        <h2 className="lp-tagline-title">
+          {subtitle || 'Jazsam\nStaff Portal'}
+        </h2>
+        <p className="lp-tagline-subtitle">
+          {tagline || 'Track orders, inventory, and daily sales in one place.'}
+        </p>
+      </div>
+
+      <div className="lp-dots">
+        <span className="lp-dot lp-dot--active" />
+        <span className="lp-dot" />
+        <span className="lp-dot" />
+      </div>
+    </div>
+  );
+}
+
 /* ════════════════════════════════════════════
    MAIN COMPONENT
    ════════════════════════════════════════════ */
@@ -69,7 +96,6 @@ export default function Login() {
     if (!loginPw) errs.pw = 'Password is required';
     if (Object.keys(errs).length) { setLoginErr(errs); return; }
 
-    // Validate against local storage
     const result = login({ email: loginEmail, password: loginPw });
     if (!result.success) {
       setLoginErr({ general: result.error });
@@ -109,7 +135,6 @@ export default function Login() {
     if (password !== confirmPw) errs.confirm = 'Password does not match!';
     if (Object.keys(errs).length) { setReg2Err(errs); return; }
 
-    // Register via context (validates duplicate email)
     const result = register({
       firstName: reg1.firstName,
       lastName:  reg1.lastName,
@@ -127,100 +152,101 @@ export default function Login() {
     navigate('/');
   }
 
-  /* ── Logo ── */
-  const Logo = () => (
-    <img src="/login-icon.png" alt="JazSam" className="login-icon" />
-  );
-
   /* ════════════
      LOGIN VIEW
      ════════════ */
   if (view === 'login') {
     return (
       <div className="login-page">
-        <div className="login-card">
-          <Logo />
-          <h1 className="login-title">Log in to JazSam</h1>
+        <BrandPanel />
 
-          {loginErr.general && (
-            <div className="login-error-banner">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
-              </svg>
-              <span>{loginErr.general}</span>
-            </div>
-          )}
+        <div className="login-panel-right">
+          <div className="login-card">
+            <img src="/login-icon.png" alt="JazSam" className="login-icon" />
+            <h1 className="login-title">Sign in to Salespresso</h1>
 
-          <form className="login-form" onSubmit={handleLogin} noValidate>
-
-            {/* Email */}
-            <div className={`login-field floating${loginErr.email ? ' has-error' : ''}`}>
-              <input
-                id="login-email"
-                type="email"
-                placeholder=" "
-                value={loginEmail}
-                onChange={e => setLoginEmail(e.target.value)}
-                autoComplete="email"
-              />
-              <label htmlFor="login-email">Email or username</label>
-              {loginErr.email && <p className="field-error">{loginErr.email}</p>}
-            </div>
-
-            {/* Password */}
-            <div className={`login-field floating${loginErr.pw ? ' has-error' : ''}`}>
-              <div className="pw-wrapper">
-                <input
-                  id="login-password"
-                  type={showLoginPw ? 'text' : 'password'}
-                  placeholder=" "
-                  value={loginPw}
-                  onChange={e => setLoginPw(e.target.value)}
-                  autoComplete="current-password"
-                />
-                <label htmlFor="login-password">Password</label>
-                <button
-                  type="button"
-                  className="pw-toggle"
-                  onClick={() => setShowLoginPw(v => !v)}
-                  aria-label="Toggle password visibility"
-                >
-                  <EyeIcon open={showLoginPw} />
-                </button>
+            {loginErr.general && (
+              <div className="login-error-banner">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+                </svg>
+                <span>{loginErr.general}</span>
               </div>
-              {loginErr.pw && <p className="field-error">{loginErr.pw}</p>}
-            </div>
+            )}
 
-            <button type="submit" className="login-btn-primary">Log in</button>
-          </form>
+            <form className="login-form" onSubmit={handleLogin} noValidate>
 
-          <p className="login-forgot">
-            <button type="button" className="login-forgot-btn" onClick={() => { setView('forgot'); setForgotEmail(''); setForgotSent(false); setForgotErr(''); }}>
-              Forgotten password?
+              {/* Email */}
+              <div className={`login-field floating${loginErr.email ? ' has-error' : ''}`}>
+                <input
+                  id="login-email"
+                  type="email"
+                  placeholder=" "
+                  value={loginEmail}
+                  onChange={e => setLoginEmail(e.target.value)}
+                  autoComplete="email"
+                />
+                <label htmlFor="login-email">Email address</label>
+                {loginErr.email && <p className="field-error">{loginErr.email}</p>}
+              </div>
+
+              {/* Password */}
+              <div className={`login-field floating${loginErr.pw ? ' has-error' : ''}`}>
+                <div className="pw-wrapper">
+                  <input
+                    id="login-password"
+                    type={showLoginPw ? 'text' : 'password'}
+                    placeholder=" "
+                    value={loginPw}
+                    onChange={e => setLoginPw(e.target.value)}
+                    autoComplete="current-password"
+                  />
+                  <label htmlFor="login-password">Password</label>
+                  <button
+                    type="button"
+                    className="pw-toggle"
+                    onClick={() => setShowLoginPw(v => !v)}
+                    aria-label="Toggle password visibility"
+                  >
+                    <EyeIcon open={showLoginPw} />
+                  </button>
+                </div>
+                {loginErr.pw && <p className="field-error">{loginErr.pw}</p>}
+              </div>
+
+              <button type="submit" className="login-btn-primary">Log in</button>
+            </form>
+
+            <p className="login-forgot">
+              <button type="button" className="login-forgot-btn" onClick={() => { setView('forgot'); setForgotEmail(''); setForgotSent(false); setForgotErr(''); }}>
+                Forgotten password?
+              </button>
+            </p>
+
+            <div className="login-divider"><span>Not a member yet?</span></div>
+
+            <button
+              type="button"
+              className="login-btn-outline"
+              onClick={() => { setView('register-step1'); setLoginErr({}); }}
+            >
+              Create an account
             </button>
-          </p>
 
-          <div className="login-divider"><span>Not a member yet?</span></div>
+            <span className="login-back-link" onClick={() => navigate('/')}>
+              ← Back to Home
+            </span>
 
-          <button
-            type="button"
-            className="login-btn-outline"
-            onClick={() => { setView('register-step1'); setLoginErr({}); }}
-          >
-            Create an account
-          </button>
+            <button
+              type="button"
+              className="login-btn-admin"
+              onClick={() => navigate('/admin')}
+            >
+              Staff Login
+            </button>
 
-          <span className="login-back-link" onClick={() => navigate('/')}>
-            ← Back to Home
-          </span>
-
-          <button
-            type="button"
-            className="login-btn-admin"
-            onClick={() => navigate('/admin')}
-          >
-          Staff Login 
-          </button>
+            <p className="login-note">Not a barista? Contact your supervisor.</p>
+          </div>
         </div>
       </div>
     );
@@ -232,61 +258,62 @@ export default function Login() {
   if (view === 'forgot') {
     return (
       <div className="login-page">
-        <div className="login-card">
-          <Logo />
+        <BrandPanel />
 
-          {forgotSent ? (
-            <div className="forgot-success">
-              <div className="forgot-success__icon">
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                  <polyline points="22 4 12 14.01 9 11.01"/>
-                </svg>
-              </div>
-              <h1 className="login-title">Check your email</h1>
-              <p className="forgot-success__msg">
-                We've sent a password reset link to<br />
-                <strong>{forgotEmail}</strong>
-              </p>
-              <p className="forgot-success__sub">
-                Didn't receive it? Check your spam folder or{' '}
-                <button type="button" className="login-forgot-btn" onClick={() => setForgotSent(false)}>
-                  try again
-                </button>.
-              </p>
-              <button type="button" className="login-btn-primary" style={{ marginTop: '8px' }} onClick={() => setView('login')}>
-                Back to Login
-              </button>
-            </div>
-          ) : (
-            <>
-              <h1 className="login-title">Forgot your password?</h1>
-              <p className="forgot-desc">
-                Enter the email address associated with your account and we'll send you a link to reset your password.
-              </p>
+        <div className="login-panel-right">
+          <div className="login-card">
+            <img src="/login-icon.png" alt="JazSam" className="login-icon" />
 
-              <form className="login-form" onSubmit={handleForgotSend} noValidate>
-                <div className={`login-field floating${forgotErr ? ' has-error' : ''}`}>
-                  <input
-                    id="forgot-email"
-                    type="email"
-                    placeholder=" "
-                    value={forgotEmail}
-                    onChange={e => setForgotEmail(e.target.value)}
-                    autoComplete="email"
-                  />
-                  <label htmlFor="forgot-email">Email address</label>
-                  {forgotErr && <p className="field-error">{forgotErr}</p>}
+            {forgotSent ? (
+              <>
+                <h1 className="login-title">Email sent!</h1>
+                <p className="login-subtitle">Check your emails for recovery instructions.</p>
+
+                <div className="forgot-success__icon" style={{ margin: '8px 0 20px' }}>
+                  <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                    <polyline points="22,6 12,13 2,6"/>
+                    <circle cx="17" cy="17" r="5" fill="#22c55e" stroke="none"/>
+                    <polyline points="14.5 17 16.5 19 19.5 15.5" stroke="#fff" strokeWidth="2"/>
+                  </svg>
                 </div>
 
-                <button type="submit" className="login-btn-primary">Send reset link</button>
-              </form>
+                <button type="button" className="login-btn-primary" style={{ width: '100%' }} onClick={() => setView('login')}>
+                  Proceed to Login
+                </button>
 
-              <span className="login-back-link" onClick={() => setView('login')}>
-                ← Back to Login
-              </span>
-            </>
-          )}
+                <span className="login-back-link" onClick={() => setView('login')}>
+                  ← Back to Login
+                </span>
+              </>
+            ) : (
+              <>
+                <h1 className="login-title">Account recovery</h1>
+                <p className="login-subtitle">Enter your email for recovery instructions.</p>
+
+                <form className="login-form" onSubmit={handleForgotSend} noValidate>
+                  <div className={`login-field floating${forgotErr ? ' has-error' : ''}`}>
+                    <input
+                      id="forgot-email"
+                      type="email"
+                      placeholder=" "
+                      value={forgotEmail}
+                      onChange={e => setForgotEmail(e.target.value)}
+                      autoComplete="email"
+                    />
+                    <label htmlFor="forgot-email">Email address</label>
+                    {forgotErr && <p className="field-error">{forgotErr}</p>}
+                  </div>
+
+                  <button type="submit" className="login-btn-primary">Continue</button>
+                </form>
+
+                <span className="login-back-link" onClick={() => setView('login')}>
+                  ← Back to Login
+                </span>
+              </>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -298,70 +325,74 @@ export default function Login() {
   if (view === 'register-step1') {
     return (
       <div className="login-page">
-        <div className="login-card">
-          <Logo />
-          <h1 className="login-title">Create an account</h1>
+        <BrandPanel tagline="Join JazSam and enjoy exclusive rewards and easy ordering." />
 
-          <form className="login-form" onSubmit={handleReg1Next} noValidate>
+        <div className="login-panel-right">
+          <div className="login-card">
+            <img src="/login-icon.png" alt="JazSam" className="login-icon" />
+            <h1 className="login-title">Create an account</h1>
 
-            <div className={`login-field floating${reg1Err.firstName ? ' has-error' : ''}`}>
-              <input
-                id="reg-firstname"
-                type="text"
-                placeholder=" "
-                value={reg1.firstName}
-                onChange={e => setReg1({ ...reg1, firstName: e.target.value })}
-                autoComplete="given-name"
-              />
-              <label htmlFor="reg-firstname">First name</label>
-              {reg1Err.firstName && <p className="field-error">{reg1Err.firstName}</p>}
-            </div>
+            <form className="login-form" onSubmit={handleReg1Next} noValidate>
 
-            <div className={`login-field floating${reg1Err.lastName ? ' has-error' : ''}`}>
-              <input
-                id="reg-lastname"
-                type="text"
-                placeholder=" "
-                value={reg1.lastName}
-                onChange={e => setReg1({ ...reg1, lastName: e.target.value })}
-                autoComplete="family-name"
-              />
-              <label htmlFor="reg-lastname">Last name</label>
-              {reg1Err.lastName && <p className="field-error">{reg1Err.lastName}</p>}
-            </div>
+              <div className={`login-field floating${reg1Err.firstName ? ' has-error' : ''}`}>
+                <input
+                  id="reg-firstname"
+                  type="text"
+                  placeholder=" "
+                  value={reg1.firstName}
+                  onChange={e => setReg1({ ...reg1, firstName: e.target.value })}
+                  autoComplete="given-name"
+                />
+                <label htmlFor="reg-firstname">First name</label>
+                {reg1Err.firstName && <p className="field-error">{reg1Err.firstName}</p>}
+              </div>
 
-            <div className={`login-field floating${reg1Err.email ? ' has-error' : ''}`}>
-              <input
-                id="reg-email"
-                type="email"
-                placeholder=" "
-                value={reg1.email}
-                onChange={e => setReg1({ ...reg1, email: e.target.value })}
-                autoComplete="email"
-              />
-              <label htmlFor="reg-email">Email address</label>
-              {reg1Err.email && <p className="field-error">{reg1Err.email}</p>}
-            </div>
+              <div className={`login-field floating${reg1Err.lastName ? ' has-error' : ''}`}>
+                <input
+                  id="reg-lastname"
+                  type="text"
+                  placeholder=" "
+                  value={reg1.lastName}
+                  onChange={e => setReg1({ ...reg1, lastName: e.target.value })}
+                  autoComplete="family-name"
+                />
+                <label htmlFor="reg-lastname">Last name</label>
+                {reg1Err.lastName && <p className="field-error">{reg1Err.lastName}</p>}
+              </div>
 
-            <div className={`login-field floating${reg1Err.phone ? ' has-error' : ''}`}>
-              <input
-                id="reg-phone"
-                type="tel"
-                placeholder=" "
-                value={reg1.phone}
-                onChange={e => setReg1({ ...reg1, phone: e.target.value })}
-                autoComplete="tel"
-              />
-              <label htmlFor="reg-phone">Contact number (optional)</label>
-              {reg1Err.phone && <p className="field-error">{reg1Err.phone}</p>}
-            </div>
+              <div className={`login-field floating${reg1Err.email ? ' has-error' : ''}`}>
+                <input
+                  id="reg-email"
+                  type="email"
+                  placeholder=" "
+                  value={reg1.email}
+                  onChange={e => setReg1({ ...reg1, email: e.target.value })}
+                  autoComplete="email"
+                />
+                <label htmlFor="reg-email">Email address</label>
+                {reg1Err.email && <p className="field-error">{reg1Err.email}</p>}
+              </div>
 
-            <button type="submit" className="login-btn-primary">Next</button>
-          </form>
+              <div className={`login-field floating${reg1Err.phone ? ' has-error' : ''}`}>
+                <input
+                  id="reg-phone"
+                  type="tel"
+                  placeholder=" "
+                  value={reg1.phone}
+                  onChange={e => setReg1({ ...reg1, phone: e.target.value })}
+                  autoComplete="tel"
+                />
+                <label htmlFor="reg-phone">Contact number (optional)</label>
+                {reg1Err.phone && <p className="field-error">{reg1Err.phone}</p>}
+              </div>
 
-          <span className="login-back-link" onClick={() => setView('login')}>
-            ← Already have an account
-          </span>
+              <button type="submit" className="login-btn-primary">Next</button>
+            </form>
+
+            <span className="login-back-link" onClick={() => setView('login')}>
+              ← Already have an account
+            </span>
+          </div>
         </div>
       </div>
     );
@@ -372,88 +403,92 @@ export default function Login() {
      ══════════════════ */
   return (
     <div className="login-page">
-      <div className="login-card">
-        <Logo />
-        <h1 className="login-title">Create an account</h1>
+      <BrandPanel tagline="Join JazSam and enjoy exclusive rewards and easy ordering." />
 
-        {reg2Err.general && (
-          <div className="login-error-banner">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
-            </svg>
-            <span>{reg2Err.general}</span>
-          </div>
-        )}
+      <div className="login-panel-right">
+        <div className="login-card">
+          <img src="/login-icon.png" alt="JazSam" className="login-icon" />
+          <h1 className="login-title">Create an account</h1>
 
-        <form className="login-form" onSubmit={handleCreateAccount} noValidate>
-
-          <div className={`login-field floating${reg2Err.pw ? ' has-error' : ''}`}>
-            <div className="pw-wrapper">
-              <input
-                id="reg-password"
-                type={showPw ? 'text' : 'password'}
-                placeholder=" "
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                autoComplete="new-password"
-              />
-              <label htmlFor="reg-password">Enter your password</label>
-              <button
-                type="button"
-                className="pw-toggle"
-                onClick={() => setShowPw(v => !v)}
-                aria-label="Toggle password visibility"
-              >
-                <EyeIcon open={showPw} />
-              </button>
+          {reg2Err.general && (
+            <div className="login-error-banner">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+              </svg>
+              <span>{reg2Err.general}</span>
             </div>
-          </div>
+          )}
 
-          <ul className="pw-checklist">
-            {PW_RULES.map(rule => {
-              const valid = rule.test(password);
-              return (
-                <li key={rule.id} className={valid ? 'valid' : ''}>
-                  <span className="check-icon">{valid ? <CheckIcon /> : ''}</span>
-                  {rule.label}
-                </li>
-              );
-            })}
-          </ul>
+          <form className="login-form" onSubmit={handleCreateAccount} noValidate>
 
-          <div className={`login-field floating${reg2Err.confirm ? ' has-error' : ''}`}>
-            <div className="pw-wrapper">
-              <input
-                id="reg-confirm-password"
-                type={showConfirm ? 'text' : 'password'}
-                placeholder=" "
-                value={confirmPw}
-                onChange={e => setConfirmPw(e.target.value)}
-                autoComplete="new-password"
-              />
-              <label htmlFor="reg-confirm-password">Re-enter your password</label>
-              <button
-                type="button"
-                className="pw-toggle"
-                onClick={() => setShowConfirm(v => !v)}
-                aria-label="Toggle confirm password visibility"
-              >
-                <EyeIcon open={showConfirm} />
-              </button>
+            <div className={`login-field floating${reg2Err.pw ? ' has-error' : ''}`}>
+              <div className="pw-wrapper">
+                <input
+                  id="reg-password"
+                  type={showPw ? 'text' : 'password'}
+                  placeholder=" "
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  autoComplete="new-password"
+                />
+                <label htmlFor="reg-password">Enter your password</label>
+                <button
+                  type="button"
+                  className="pw-toggle"
+                  onClick={() => setShowPw(v => !v)}
+                  aria-label="Toggle password visibility"
+                >
+                  <EyeIcon open={showPw} />
+                </button>
+              </div>
             </div>
-            {reg2Err.confirm && <p className="field-error">{reg2Err.confirm}</p>}
-          </div>
 
-          <p className="login-privacy">
-            Sign up to accept <a href="#">Terms</a> &amp; <a href="#">Privacy Policy</a>.
-          </p>
+            <ul className="pw-checklist">
+              {PW_RULES.map(rule => {
+                const valid = rule.test(password);
+                return (
+                  <li key={rule.id} className={valid ? 'valid' : ''}>
+                    <span className="check-icon">{valid ? <CheckIcon /> : ''}</span>
+                    {rule.label}
+                  </li>
+                );
+              })}
+            </ul>
 
-          <button type="submit" className="login-btn-primary">Create account</button>
-        </form>
+            <div className={`login-field floating${reg2Err.confirm ? ' has-error' : ''}`}>
+              <div className="pw-wrapper">
+                <input
+                  id="reg-confirm-password"
+                  type={showConfirm ? 'text' : 'password'}
+                  placeholder=" "
+                  value={confirmPw}
+                  onChange={e => setConfirmPw(e.target.value)}
+                  autoComplete="new-password"
+                />
+                <label htmlFor="reg-confirm-password">Re-enter your password</label>
+                <button
+                  type="button"
+                  className="pw-toggle"
+                  onClick={() => setShowConfirm(v => !v)}
+                  aria-label="Toggle confirm password visibility"
+                >
+                  <EyeIcon open={showConfirm} />
+                </button>
+              </div>
+              {reg2Err.confirm && <p className="field-error">{reg2Err.confirm}</p>}
+            </div>
 
-        <span className="login-back-link" onClick={() => setView('register-step1')}>
-          ← Return
-        </span>
+            <p className="login-privacy">
+              Sign up to accept <a href="#">Terms</a> &amp; <a href="#">Privacy Policy</a>.
+            </p>
+
+            <button type="submit" className="login-btn-primary">Create account</button>
+          </form>
+
+          <span className="login-back-link" onClick={() => setView('register-step1')}>
+            ← Return
+          </span>
+        </div>
       </div>
     </div>
   );
